@@ -568,38 +568,37 @@ def landing_page():
     .feature-card {
         background: linear-gradient(145deg, #16213E, #1A1A2E);
         border-radius: 12px;
-        padding: 16px;
-        margin: 8px 0;
+        padding: 14px;
+        margin: 6px 0;
         border: 1px solid #2D3A4F;
-        min-height: 100px;
     }
     .stat-card {
         background: linear-gradient(145deg, #1A1A2E, #16213E);
         border-radius: 10px;
-        padding: 16px;
+        padding: 14px;
         text-align: center;
         border: 1px solid #2D3A4F;
     }
     .stat-number {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
         font-weight: bold;
         color: #4A90D9;
     }
     .stat-label {
         color: #A0A0A0;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
     .divider {
         height: 1px;
         background: linear-gradient(90deg, transparent, #4A90D9, transparent);
-        margin: 1.5rem 0;
+        margin: 1.2rem 0;
     }
     .mtf-note {
         background: #16213E;
         border-left: 4px solid #F39C12;
-        padding: 12px;
+        padding: 10px;
         border-radius: 0 8px 8px 0;
-        margin: 8px 0;
+        margin: 6px 0;
     }
     </style>
     """, unsafe_allow_html=True)
