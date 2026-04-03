@@ -50,7 +50,8 @@ def download_data_batch(tickers: list, period: str = '2y', interval: str = '1d',
             if df.empty:
                 return ticker, None
             if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
+                df.columns = [col[0] for col in df.columns]
+            df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
             return ticker, df
         except:
             return ticker, None
@@ -59,24 +60,25 @@ def download_data_batch(tickers: list, period: str = '2y', interval: str = '1d',
         futures = {executor.submit(download_ticker, t): t for t in tickers}
         for future in as_completed(futures):
             ticker, df = future.result()
-            if df is not None and not df.empty:
+            if df is not None and not df.empty and len(df) > 50:
                 data[ticker] = df
     
     return data
 
 
-def find_swing_highs_lows(df: pd.DataFrame, window: int = 5) -> pd.DataFrame:
-    """Identify swing highs and lows."""
+def find_swing_highs_lows(df: pd.DataFrame, window: int = 20) -> pd.DataFrame:
+    """Identify swing highs and lows using rolling windows."""
     df = df.copy()
     
-    df['swing_high'] = df['High'].rolling(window=window, center=True).max()
-    df['swing_high'] = df['High'].where(df['High'] == df['swing_high'])
+    # Use rolling max/min to find local extrema
+    df['high_roll'] = df['High'].rolling(window, center=True).max()
+    df['low_roll'] = df['Low'].rolling(window, center=True).min()
     
-    df['swing_low'] = df['Low'].rolling(window=window, center=True).min()
-    df['swing_low'] = df['Low'].where(df['Low'] == df['swing_low'])
+    # Mark swing highs (local maxima)
+    df['swing_high'] = df['High'].where(df['High'] == df['high_roll'])
     
-    df['swing_high'] = df['swing_high'].shift(-window // 2)
-    df['swing_low'] = df['swing_low'].shift(-window // 2)
+    # Mark swing lows (local minima)
+    df['swing_low'] = df['Low'].where(df['Low'] == df['low_roll'])
     
     return df
 
@@ -85,19 +87,20 @@ def detect_liquidity_sweeps(df: pd.DataFrame) -> pd.DataFrame:
     """Detect bullish and bearish liquidity sweeps."""
     df = find_swing_highs_lows(df)
     
-    df['prev_swing_low'] = df['swing_low'].shift(1)
-    df['prev_swing_high'] = df['swing_high'].shift(1)
+    # Use forward-filled last swing (more reliable)
+    df['last_swing_low'] = df['swing_low'].ffill()
+    df['last_swing_high'] = df['swing_high'].ffill()
     
     df['bull_sweep'] = (
-        (df['Low'] < df['prev_swing_low']) &
+        (df['Low'] < df['last_swing_low']) &
         (df['Close'] > df['Open']) &
-        (df['Low'] < df['prev_swing_low'] * 1.01)
+        (df['last_swing_low'].notna())
     )
     
     df['bear_sweep'] = (
-        (df['High'] > df['prev_swing_high']) &
+        (df['High'] > df['last_swing_high']) &
         (df['Close'] < df['Open']) &
-        (df['High'] > df['prev_swing_high'] * 0.99)
+        (df['last_swing_high'].notna())
     )
     
     return df
