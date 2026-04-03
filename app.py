@@ -736,7 +736,8 @@ def screener_page():
     with st.sidebar:
         st.markdown("### ⚙️ Configurações")
         
-        min_rr = st.slider("RR Mínimo", 1.0, 5.0, 1.5, 0.5)
+        st.markdown("<small>Filtrar por RR mínimo:</small>", unsafe_allow_html=True)
+        min_rr = st.slider("", 0.0, 5.0, 0.0, 0.5, label_visibility="collapsed")
         
         signal_filter = st.multiselect(
             "Filtrar Sinais",
