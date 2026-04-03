@@ -328,54 +328,58 @@ def landing_page():
     </div>
     """, unsafe_allow_html=True)
 
-    # 2 ── Hero (com CTA integrado) ───────────────────────────────────────────────
-    st.markdown("""
-    <div class="hero">
-      <!-- Esquerda -->
-      <div>
-        <div class="eyebrow">⚡ Smart Money Concepts · Institucional</div>
-        <div class="h1">Screener SMC<br><span class="g">para a B3</span></div>
-        <span class="ver">v3.0 &nbsp;·&nbsp; Yahoo Finance &nbsp;·&nbsp; Timeframe D1</span>
-        <div class="hdesc">
-          Varredura diária de <strong>200+ ativos</strong> com lógica institucional —
-          sweep confirmado, BOS/CHOCH validado, OBs, FVGs e Fibonacci automáticos.
-        </div>
-        <div class="checks">
-          <div class="ck">Sweep de liquidez obrigatório</div>
-          <div class="ck">BOS/CHOCH por close de corpo</div>
-          <div class="ck">Order Blocks + FVG confluentes</div>
-          <div class="ck">Fibonacci Discount/Premium</div>
-        </div>
-      </div>
-      <!-- Direita: painel de sinais -->
-      <div>
-        <div class="panel">
-          <div class="pbar">
-            <span class="ptitle">📊 Sinais Ativos — D1</span>
-            <div class="live"><div class="dot"></div> Atualizado hoje</div>
-          </div>
-          <div class="pbody">
-            <div class="prow"><span class="tk">PETR4</span><span class="st b">BOS</span><span class="dr up">▲ Alta</span><span class="zn">🔵 Discount</span></div>
-            <div class="prow"><span class="tk">VALE3</span><span class="st c">CHOCH</span><span class="dr dn">▼ Baixa</span><span class="zn">🟡 Premium</span></div>
-            <div class="prow"><span class="tk">WEGE3</span><span class="st b">BOS</span><span class="dr up">▲ Alta</span><span class="zn">🔵 Discount</span></div>
-            <div class="prow"><span class="tk">ITUB4</span><span class="st b">BOS</span><span class="dr dn">▼ Baixa</span><span class="zn">🟡 Premium</span></div>
-            <div class="prow"><span class="tk">BBDC4</span><span class="st c">CHOCH</span><span class="dr up">▲ Alta</span><span class="zn">🔵 Discount</span></div>
-          </div>
-          <div class="pfoot">
-            <span>200+ ativos escaneados</span><span>yfinance · B3</span><span>D1 diário</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # 2 ── Hero: 2 colunas Streamlit nativas (botão fica alinhado com o título)
+    col_left, col_right = st.columns([1.15, 1], gap="large")
 
-    # ── CTA Button + Stats numa linha compacta ────────────────────────────────────
-    # Padding horizontal via coluna vazia, stats via markdown puro
-    _pad, col_btn, col_s1, col_s2, col_s3, col_s4 = st.columns([0.45, 1.8, 0.9, 0.9, 0.9, 0.9])
-    with col_btn:
+    with col_left:
+        st.markdown("""
+        <div style="padding: 48px 0 32px 52px;">
+          <div class="eyebrow">⚡ Smart Money Concepts · Institucional</div>
+          <div class="h1">Screener SMC<br><span class="g">para a B3</span></div>
+          <span class="ver">v3.0 &nbsp;·&nbsp; Yahoo Finance &nbsp;·&nbsp; Timeframe D1</span>
+          <div class="hdesc">
+            Varredura diária de <strong>200+ ativos</strong> com lógica institucional —
+            sweep confirmado, BOS/CHOCH validado, OBs, FVGs e Fibonacci automáticos.
+          </div>
+          <div class="checks">
+            <div class="ck">Sweep de liquidez obrigatório</div>
+            <div class="ck">BOS/CHOCH por close de corpo</div>
+            <div class="ck">Order Blocks + FVG confluentes</div>
+            <div class="ck">Fibonacci Discount/Premium</div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+        # Botão alinhado com o título, dentro da mesma coluna
+        st.markdown('<div style="padding: 0 0 40px 52px;">', unsafe_allow_html=True)
         if st.button("🚀  Iniciar Screener Agora", key="btn_start"):
             st.session_state.page = 'screener'
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with col_right:
+        st.markdown("""
+        <div style="padding: 48px 52px 32px 16px;">
+          <div class="panel">
+            <div class="pbar">
+              <span class="ptitle">📊 Sinais Ativos — D1</span>
+              <div class="live"><div class="dot"></div> Atualizado hoje</div>
+            </div>
+            <div class="pbody">
+              <div class="prow"><span class="tk">PETR4</span><span class="st b">BOS</span><span class="dr up">▲ Alta</span><span class="zn">🔵 Discount</span></div>
+              <div class="prow"><span class="tk">VALE3</span><span class="st c">CHOCH</span><span class="dr dn">▼ Baixa</span><span class="zn">🟡 Premium</span></div>
+              <div class="prow"><span class="tk">WEGE3</span><span class="st b">BOS</span><span class="dr up">▲ Alta</span><span class="zn">🔵 Discount</span></div>
+              <div class="prow"><span class="tk">ITUB4</span><span class="st b">BOS</span><span class="dr dn">▼ Baixa</span><span class="zn">🟡 Premium</span></div>
+              <div class="prow"><span class="tk">BBDC4</span><span class="st c">CHOCH</span><span class="dr up">▲ Alta</span><span class="zn">🔵 Discount</span></div>
+            </div>
+            <div class="pfoot">
+              <span>200+ ativos escaneados</span><span>yfinance · B3</span><span>D1 diário</span>
+            </div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Stats bar compacta ────────────────────────────────────────────────────────
+    _pad, col_s1, col_s2, col_s3, col_s4, _pad2 = st.columns([0.45, 1, 1, 1, 1, 0.45])
     with col_s1:
         st.markdown('<div style="text-align:center;padding:10px 0;"><span class="snum" style="font-size:1.55rem;">200+</span><div class="slbl">Ativos</div></div>', unsafe_allow_html=True)
     with col_s2:
