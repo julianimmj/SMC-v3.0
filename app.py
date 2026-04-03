@@ -736,9 +736,6 @@ def screener_page():
     with st.sidebar:
         st.markdown("### ⚙️ Configurações")
         
-        st.markdown("<small>Filtrar por RR mínimo:</small>", unsafe_allow_html=True)
-        min_rr = st.slider("", 0.0, 5.0, 0.0, 0.5, label_visibility="collapsed")
-        
         signal_filter = st.multiselect(
             "Filtrar Sinais",
             ["bull", "bear"],
@@ -762,7 +759,7 @@ def screener_page():
     
     if 'signals_df' not in st.session_state:
         with st.spinner('🔄 Executando screener... isso pode levar alguns minutos'):
-            st.session_state['signals_df'] = run_screener(min_rr=min_rr)
+            st.session_state['signals_df'] = run_screener()
     
     df = st.session_state['signals_df']
     
