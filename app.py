@@ -1,869 +1,666 @@
 """
-SMC Cloud Screener v3.0 - Streamlit Application
-Professional Dashboard for B3 Stocks with SMC Logic
+SMC Cloud Screener v3.0 - Streamlit App
+Screener Institucional para Ações da B3 com lógica SMC (Smart Money Concepts)
 """
 
 import streamlit as st
 import pandas as pd
 import numpy as np
-import yfinance as yf
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import warnings
-import os
-warnings.filterwarnings('ignore')
+import datetime
 
+from screener_logic import (
+    run_screener,
+    download_data_batch,
+    detect_smc_signals,
+)
 
-COLUMNS = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
-
+# ─── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="SMC Cloud Screener v3.0",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-COLORS = {
-    'bull': '#2ECC71',
-    'bear': '#E74C3C',
-    'neutral': '#7F8C8D',
-    'sweep': '#F39C12',
-    'ob': '#9B59B6',
-    'fvg': '#3498DB',
-    'fib': '#E67E22',
-    'background': '#1A1A2E',
-    'card_bg': '#16213E',
-    'accent': '#4A90D9',
-    'text': '#ECEFF4',
-    'text_muted': '#A0A0A0'
+# ─── CSS ────────────────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg-dark: #0d0d1a;
+  --bg-card: #12122a;
+  --bg-glass: rgba(30, 30, 60, 0.55);
+  --accent: #4a90d9;
+  --accent2: #7c5cbf;
+  --green: #00c48c;
+  --red: #ff4d6d;
+  --gold: #f4c430;
+  --text-primary: #e8e8f0;
+  --text-secondary: #8888aa;
+  --border: rgba(74, 144, 217, 0.25);
 }
 
+html, body, [class*="css"]  {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+}
 
-def download_data_batch(tickers: list, period: str = '2y', interval: str = '1d', max_workers: int = 20) -> dict:
-    """Download data in parallel using ThreadPoolExecutor."""
-    data = {}
-    
-    def download_ticker(ticker):
-        try:
-            df = yf.download(ticker, period=period, interval=interval, progress=False)
-            if df.empty:
-                return ticker, None
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = [col[0] for col in df.columns]
-            df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
-            return ticker, df.reset_index(drop=True)
-        except:
-            return ticker, None
-    
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {executor.submit(download_ticker, t): t for t in tickers}
-        for future in as_completed(futures):
-            ticker, df = future.result()
-            if df is not None and not df.empty and len(df) > 50:
-                data[ticker] = df
-    
-    return data
+.stApp {
+    background: linear-gradient(135deg, #0d0d1a 0%, #111130 50%, #0d0d1a 100%);
+}
 
+/* ── Landing Hero ── */
+.hero-wrapper {
+    text-align: center;
+    padding: 60px 20px 40px;
+    position: relative;
+}
+.hero-badge {
+    display: inline-block;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 50px;
+    margin-bottom: 22px;
+}
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #ffffff 0%, #a0bfe8 60%, #7c5cbf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+}
+.hero-subtitle {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    max-width: 650px;
+    margin: 0 auto 36px;
+    line-height: 1.7;
+}
 
-def find_swing_highs_lows(df: pd.DataFrame, window: int = 20) -> pd.DataFrame:
-    """Identify swing highs and lows using rolling windows."""
-    df = df.copy()
-    
-    # Use rolling max/min to find local extrema
-    df['high_roll'] = df['High'].rolling(window, center=True).max()
-    df['low_roll'] = df['Low'].rolling(window, center=True).min()
-    
-    # Mark swing highs (local maxima)
-    df['swing_high'] = df['High'].where(df['High'] == df['high_roll'])
-    
-    # Mark swing lows (local minima)
-    df['swing_low'] = df['Low'].where(df['Low'] == df['low_roll'])
-    
-    return df
+/* ── Stat bar ── */
+.stat-row {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 50px;
+    flex-wrap: wrap;
+}
+.stat-item {
+    text-align: center;
+}
+.stat-number {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.stat-label {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
 
+/* ── Feature cards ── */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin: 0 auto 50px;
+    max-width: 1100px;
+    padding: 0 16px;
+}
+.feature-card {
+    background: var(--bg-glass);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    backdrop-filter: blur(12px);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(74, 144, 217, 0.18);
+}
+.feature-icon {
+    font-size: 2rem;
+    margin-bottom: 14px;
+}
+.feature-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+.feature-desc {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
 
-def detect_liquidity_sweeps(df: pd.DataFrame) -> pd.DataFrame:
-    """Detect bullish and bearish liquidity sweeps."""
-    df = find_swing_highs_lows(df)
-    
-    # Use forward-filled last swing (more reliable)
-    df['last_swing_low'] = df['swing_low'].ffill()
-    df['last_swing_high'] = df['swing_high'].ffill()
-    
-    df['bull_sweep'] = (
-        (df['Low'] < df['last_swing_low']) &
-        (df['Close'] > df['Open']) &
-        (df['last_swing_low'].notna())
-    )
-    
-    df['bear_sweep'] = (
-        (df['High'] > df['last_swing_high']) &
-        (df['Close'] < df['Open']) &
-        (df['last_swing_high'].notna())
-    )
-    
-    return df
+/* ── Disclaimer ── */
+.disclaimer {
+    background: rgba(244, 196, 48, 0.08);
+    border: 1px solid rgba(244, 196, 48, 0.3);
+    border-radius: 12px;
+    padding: 16px 22px;
+    font-size: 0.82rem;
+    color: var(--gold);
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto 40px;
+}
 
+/* ── Signal table ── */
+.signal-bull {
+    color: var(--green);
+    font-weight: 700;
+}
+.signal-bear {
+    color: var(--red);
+    font-weight: 700;
+}
 
-def identify_strong_structures(df: pd.DataFrame) -> pd.DataFrame:
-    """Simplified: after a sweep, that level becomes strong."""
-    df = detect_liquidity_sweeps(df)
-    
-    # After any bull_sweep, the last_swing_low becomes strong
-    df['strong_low'] = df['bull_sweep'].ffill()
-    df['strong_high'] = df['bear_sweep'].ffill()
-    
-    return df
+/* ── Status boxes ── */
+.status-box {
+    background: var(--bg-glass);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    backdrop-filter: blur(8px);
+    margin-bottom: 16px;
+}
 
+/* ── MTF note ── */
+.mtf-note {
+    background: rgba(74, 144, 217, 0.1);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-top: 12px;
+}
 
-def detect_bos_chooch(df: pd.DataFrame) -> pd.DataFrame:
-    """Detect BOS using the most recent strong level."""
-    df = identify_strong_structures(df)
-    
-    df['bos_bull'] = False
-    df['bos_bear'] = False
-    
-    df = df.reset_index(drop=True)
-    
-    for i in range(1, len(df)):
-        current_price = df.loc[i, 'Close']
-        prev_close = df.loc[i-1, 'Close']
-        
-        prior_strong_highs = df.loc[:i-1][df.loc[:i-1, 'strong_high']]
-        prior_strong_lows = df.loc[:i-1][df.loc[:i-1, 'strong_low']]
-        
-        if len(prior_strong_highs) > 0:
-            last_strong_high = prior_strong_highs['last_swing_high'].iloc[-1]
-            if not pd.isna(last_strong_high) and current_price > last_strong_high and prev_close <= last_strong_high:
-                df.loc[i, 'bos_bull'] = True
-        
-        if len(prior_strong_lows) > 0:
-            last_strong_low = prior_strong_lows['last_swing_low'].iloc[-1]
-            if not pd.isna(last_strong_low) and current_price < last_strong_low and prev_close >= last_strong_low:
-                df.loc[i, 'bos_bear'] = True
-    
-    return df
-
-
-def calculate_fibonacci(df: pd.DataFrame, start_idx: int, end_idx: int) -> dict:
-    """Calculate Fibonacci levels for a move."""
-    if start_idx >= end_idx or start_idx < 0 or end_idx >= len(df):
-        return {}
-    
-    start_price = df.loc[start_idx, 'Low'] if df.loc[start_idx, 'Close'] > df.loc[start_idx, 'Open'] else df.loc[start_idx, 'Close']
-    end_price = df.loc[end_idx, 'High']
-    
-    diff = end_price - start_price
-    
-    levels = {
-        '0.0': start_price,
-        '0.236': start_price + diff * 0.236,
-        '0.382': start_price + diff * 0.382,
-        '0.5': start_price + diff * 0.5,
-        '0.618': start_price + diff * 0.618,
-        '0.786': start_price + diff * 0.786,
-        '1.0': end_price
-    }
-    
-    return levels
-
-
-def find_order_blocks(df: pd.DataFrame, signal_idx: int, direction: str) -> pd.DataFrame:
-    """Find Order Blocks prior to a strong move."""
-    if signal_idx < 3 or signal_idx >= len(df):
-        return pd.DataFrame()
-    
-    search_range = range(max(0, signal_idx - 10), signal_idx)
-    blocks = []
-    
-    for i in search_range:
-        if direction == 'bull':
-            if df.loc[i, 'Close'] < df.loc[i, 'Open']:
-                block = {
-                    'idx': i,
-                    'high': df.loc[i, 'High'],
-                    'low': df.loc[i, 'Low'],
-                    'close': df.loc[i, 'Close'],
-                    'color': 'bearish'
-                }
-                blocks.append(block)
-        else:
-            if df.loc[i, 'Close'] > df.loc[i, 'Open']:
-                block = {
-                    'idx': i,
-                    'high': df.loc[i, 'High'],
-                    'low': df.loc[i, 'Low'],
-                    'close': df.loc[i, 'Close'],
-                    'color': 'bullish'
-                }
-                blocks.append(block)
-    
-    return pd.DataFrame(blocks)
-
-
-def find_fvg(df: pd.DataFrame) -> list:
-    """Find Fair Value Gaps."""
-    fvgs = []
-    
-    for i in range(1, len(df) - 1):
-        high_n1 = df.loc[i-1, 'High']
-        low_n1 = df.loc[i-1, 'Low']
-        
-        if high_n1 > df.loc[i+1, 'Low']:
-            fvg = {
-                'type': 'bearish',
-                'top': high_n1,
-                'bottom': df.loc[i+1, 'Low'],
-                'mid': (high_n1 + df.loc[i+1, 'Low']) / 2,
-                'idx': i-1
-            }
-            fvgs.append(fvg)
-        
-        if low_n1 < df.loc[i+1, 'High']:
-            fvg = {
-                'type': 'bullish',
-                'top': df.loc[i+1, 'High'],
-                'bottom': low_n1,
-                'mid': (df.loc[i+1, 'High'] + low_n1) / 2,
-                'idx': i-1
-            }
-            fvgs.append(fvg)
-    
-    return fvgs
+/* ── Streamlit overrides ── */
+div[data-testid="metric-container"] {
+    background: var(--bg-glass) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+}
+.stButton > button {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 14px 40px;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+    width: 100%;
+}
+.stButton > button:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+}
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0f0f28 0%, #12122a 100%);
+    border-right: 1px solid var(--border);
+}
+</style>
+""", unsafe_allow_html=True)
 
 
-def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
-    """Main function to detect all SMC signals."""
-    df = detect_bos_chooch(df)
-    
-    df['signal'] = None
-    df['signal_type'] = None
-    df['poi_type'] = None
-    df['poi_price'] = np.nan
-    df['zone'] = None
-    df['sl_price'] = np.nan
-    df['tp1_price'] = np.nan
-    df['rr_ratio'] = np.nan
-    df['mtf_note'] = None
-    
-    for i in range(10, len(df)):
-        zone = 'neutral'
-        
-        if df.loc[i, 'bos_bull']:
-            direction = 'bull'
-            start_idx = max(0, i - 5)
-            end_idx = i
-            
-            fib = calculate_fibonacci(df, start_idx, end_idx)
-            current_price = df.loc[i, 'Close']
-            order_blocks = find_order_blocks(df, i, 'bull')
-            fvgs = find_fvg(df)
-            
-            poi_price = None
-            poi_type = None
-            
-            if 0.5 in fib:
-                fib_50 = fib['0.5']
-                if current_price < fib_50:
-                    poi_price = fib_50
-                    poi_type = 'fib_50'
-                    zone = 'discount'
-                else:
-                    zone = 'premium'
-            
-            if not order_blocks.empty:
-                ob = order_blocks.iloc[-1]
-                if poi_price is None or abs(ob['low'] - current_price) < abs(poi_price - current_price):
-                    poi_price = ob['low']
-                    poi_type = 'order_block'
-            
-            for fvg in fvgs:
-                if fvg['type'] == 'bullish':
-                    if poi_price is None or abs(fvg['mid'] - current_price) < abs(poi_price - current_price):
-                        poi_price = fvg['mid']
-                        poi_type = 'fvg'
-            
-            if poi_price is not None:
-                strong_lows = df[df['strong_low']]['Low'].values
-                sl_price = min(strong_lows) if len(strong_lows) > 0 else current_price * 0.98
-                
-                strong_highs = df[df['strong_high']]['High'].values
-                tp1_price = max(strong_highs) if len(strong_highs) > 0 else current_price * 1.02
-                
-                risk = abs(current_price - sl_price)
-                reward = abs(tp1_price - current_price)
-                rr = reward / risk if risk > 0 else 0
-                
-                df.loc[i, 'signal'] = direction
-                df.loc[i, 'signal_type'] = 'BOS'
-                df.loc[i, 'poi_type'] = poi_type
-                df.loc[i, 'poi_price'] = poi_price
-                df.loc[i, 'zone'] = zone
-                df.loc[i, 'sl_price'] = sl_price
-                df.loc[i, 'tp1_price'] = tp1_price
-                df.loc[i, 'rr_ratio'] = round(rr, 2)
-                df.loc[i, 'mtf_note'] = 'Aguardar CHOCH interno LTF + alinhamento de fluxo'
-        
-        elif df.loc[i, 'bos_bear']:
-            direction = 'bear'
-            start_idx = max(0, i - 5)
-            end_idx = i
-            
-            fib = calculate_fibonacci(df, start_idx, end_idx)
-            current_price = df.loc[i, 'Close']
-            order_blocks = find_order_blocks(df, i, 'bear')
-            fvgs = find_fvg(df)
-            
-            poi_price = None
-            poi_type = None
-            
-            if 0.5 in fib:
-                fib_50 = fib['0.5']
-                if current_price > fib_50:
-                    poi_price = fib_50
-                    poi_type = 'fib_50'
-                    zone = 'premium'
-                else:
-                    zone = 'discount'
-            
-            if not order_blocks.empty:
-                ob = order_blocks.iloc[-1]
-                if poi_price is None or abs(ob['high'] - current_price) < abs(poi_price - current_price):
-                    poi_price = ob['high']
-                    poi_type = 'order_block'
-            
-            for fvg in fvgs:
-                if fvg['type'] == 'bearish':
-                    if poi_price is None or abs(fvg['mid'] - current_price) < abs(poi_price - current_price):
-                        poi_price = fvg['mid']
-                        poi_type = 'fvg'
-            
-            if poi_price is not None:
-                strong_highs = df[df['strong_high']]['High'].values
-                sl_price = max(strong_highs) if len(strong_highs) > 0 else current_price * 1.02
-                
-                strong_lows = df[df['strong_low']]['Low'].values
-                tp1_price = min(strong_lows) if len(strong_lows) > 0 else current_price * 0.98
-                
-                risk = abs(current_price - sl_price)
-                reward = abs(tp1_price - current_price)
-                rr = reward / risk if risk > 0 else 0
-                
-                df.loc[i, 'signal'] = direction
-                df.loc[i, 'signal_type'] = 'BOS'
-                df.loc[i, 'poi_type'] = poi_type
-                df.loc[i, 'poi_price'] = poi_price
-                df.loc[i, 'zone'] = zone
-                df.loc[i, 'sl_price'] = sl_price
-                df.loc[i, 'tp1_price'] = tp1_price
-                df.loc[i, 'rr_ratio'] = round(rr, 2)
-                df.loc[i, 'mtf_note'] = 'Aguardar CHOCH interno LTF + alinhamento de fluxo'
-        
-        elif df.loc[i, 'chooch_bull']:
-            df.loc[i, 'signal'] = 'bull'
-            df.loc[i, 'signal_type'] = 'CHOCH'
-            df.loc[i, 'zone'] = 'reversal'
-            df.loc[i, 'mtf_note'] = 'Reversão - aguardar entrada no POI'
-        
-        elif df.loc[i, 'chooch_bear']:
-            df.loc[i, 'signal'] = 'bear'
-            df.loc[i, 'signal_type'] = 'CHOCH'
-            df.loc[i, 'zone'] = 'reversal'
-            df.loc[i, 'mtf_note'] = 'Reversão - aguardar entrada no POI'
-    
-    return df
+# ─── Session state init ──────────────────────────────────────────────────────────
+if 'page' not in st.session_state:
+    st.session_state.page = 'landing'
+if 'signals_df' not in st.session_state:
+    st.session_state.signals_df = None
+if 'last_run' not in st.session_state:
+    st.session_state.last_run = None
 
 
-def get_latest_signals(df: pd.DataFrame, lookback: int = 5) -> pd.DataFrame:
-    """Extract the latest signals from the dataframe."""
-    signals = df[df['signal'].notna()].tail(lookback)
-    return signals
-
-
-def run_screener(tickers_file: str = 'tickers_b3.csv', min_rr: float = 0.5) -> pd.DataFrame:
-    """Run the complete screener on all tickers."""
-    tickers_df = pd.read_csv(tickers_file)
-    
-    def get_yf_ticker(row):
-        ticker = row['ticker']
-        tipo = row['tipo']
-        if tipo == 'BDR':
-            return ticker
-        return f"{ticker}.SA"
-    
-    tickers = [get_yf_ticker(row) for idx, row in tickers_df.iterrows()]
-    
-    data = download_data_batch(tickers)
-    
-    all_signals = []
-    
-    for ticker, df in data.items():
-        if df is None or len(df) < 50:
-            continue
-        
-        try:
-            df_result = detect_smc_signals(df)
-            signals = get_latest_signals(df_result)
-            
-            if not signals.empty:
-                latest = signals.iloc[-1]
-                if pd.notna(latest['signal']):
-                    ticker_clean = ticker.replace('.SA', '')
-                    all_signals.append({
-                        'ticker': ticker_clean,
-                        'signal': latest['signal'],
-                        'signal_type': latest['signal_type'],
-                        'price': df_result.iloc[-1]['Close'],
-                        'poi_type': latest.get('poi_type'),
-                        'poi_price': latest.get('poi_price'),
-                        'zone': latest.get('zone'),
-                        'sl': latest.get('sl_price'),
-                        'tp1': latest.get('tp1_price'),
-                        'rr': latest.get('rr_ratio'),
-                        'mtf_note': latest.get('mtf_note')
-                    })
-        except Exception as e:
-            continue
-    
-    if all_signals:
-        result_df = pd.DataFrame(all_signals)
-        return result_df
-    return pd.DataFrame()
-
-
-def create_chart(df: pd.DataFrame, ticker: str) -> go.Figure:
-    """Create interactive chart with SMC markers."""
-    fig = make_subplots(
-        rows=2, cols=1,
-        shared_xaxes=True,
-        vertical_spacing=0.03,
-        row_heights=[0.7, 0.3]
-    )
-    
-    df = detect_smc_signals(df)
-    
-    fig.add_trace(
-        go.Candlestick(
-            x=df.index,
-            open=df['Open'],
-            high=df['High'],
-            low=df['Low'],
-            close=df['Close'],
-            name=ticker
-        ),
-        row=1, col=1
-    )
-    
-    df_sweeps = df[df['bull_sweep'] | df['bear_sweep']]
-    if not df_sweeps.empty:
-        fig.add_trace(
-            go.Scatter(
-                x=df_sweeps.index,
-                y=df_sweeps['Low'].where(df_sweeps['bull_sweep']).fillna(df_sweeps['High']),
-                mode='markers',
-                marker=dict(symbol='triangle-down', size=10, color=COLORS['sweep']),
-                name='Liquidity Sweep'
-            ),
-            row=1, col=1
-        )
-    
-    df_strong = df[df['strong_low'] | df['strong_high']]
-    if not df_strong.empty:
-        fig.add_trace(
-            go.Scatter(
-                x=df_strong.index,
-                y=df_strong['Low'].where(df_strong['strong_low']).fillna(df_strong['High']),
-                mode='markers',
-                marker=dict(symbol='diamond', size=12, color=COLORS['ob']),
-                name='Strong Level'
-            ),
-            row=1, col=1
-        )
-    
-    signals = df[df['signal'].notna()]
-    if not signals.empty:
-        for idx, row in signals.iterrows():
-            color = COLORS['bull'] if row['signal'] == 'bull' else COLORS['bear']
-            fig.add_annotation(
-                x=idx,
-                y=row['Close'],
-                text=f"{row['signal_type']}",
-                showarrow=True,
-                arrowhead=2,
-                arrowcolor=color,
-                font=dict(color=color, size=10)
-            )
-    
-    fig.add_trace(
-        go.Bar(
-            x=df.index,
-            y=df['Volume'],
-            name='Volume',
-            marker=dict(color='rgba(128, 128, 128, 0.5)')
-        ),
-        row=2, col=1
-    )
-    
-    fig.update_layout(
-        template='plotly_dark',
-        height=600,
-        showlegend=True,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        margin=dict(l=50, r=50, t=80, b=50)
-    )
-    
-    fig.update_xaxesrangeslicing()
-    fig.update_yaxes(title="Price", row=1, col=1)
-    fig.update_yaxes(title="Volume", row=2, col=1)
-    
-    return fig
-
-
+# ─── Landing Page ────────────────────────────────────────────────────────────────
 def landing_page():
-    """Professional landing page."""
-    
     st.markdown("""
-    <style>
-    .hero-title {
-        font-size: 3rem;
-        font-weight: 800;
-        background: linear-gradient(90deg, #00C805, #00E70A);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
-    }
-    .hero-subtitle {
-        font-size: 1.3rem;
-        color: #A0A0A0;
-        margin-bottom: 1.5rem;
-    }
-    .feature-card {
-        background: linear-gradient(145deg, #16213E, #1A1A2E);
-        border-radius: 12px;
-        padding: 14px;
-        margin: 6px 0;
-        border: 1px solid #2D3A4F;
-        height: 110px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    .feature-card h4 {
-        margin: 0 0 6px 0;
-    }
-    .feature-card p {
-        margin: 0;
-        line-height: 1.3;
-    }
-    .stat-card {
-        background: linear-gradient(145deg, #1A1A2E, #16213E);
-        border-radius: 10px;
-        padding: 14px;
-        text-align: center;
-        border: 1px solid #2D3A4F;
-    }
-    .stat-number {
-        font-size: 1.6rem;
-        font-weight: bold;
-        color: #4A90D9;
-    }
-    .stat-label {
-        color: #A0A0A0;
-        font-size: 0.75rem;
-    }
-    .divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, #4A90D9, transparent);
-        margin: 1.2rem 0;
-    }
-    .mtf-note {
-        background: #16213E;
-        border-left: 4px solid #F39C12;
-        padding: 10px;
-        border-radius: 0 8px 8px 0;
-        margin: 6px 0;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown('<p class="hero-title">📈 SMC Cloud Screener v3.0</p>', unsafe_allow_html=True)
-        st.markdown('''<p class="hero-subtitle">Screener Institucional para Ações da B3</p>
-        <p style="color: #7F8C8D; font-size: 0.85rem;">
-            Varredura diária de 280+ ativos com lógica SMC (Smart Money Concepts)<br>
-            Baseado em ICT/SMC 2025-2026 com validação rigorosa de liquidez
-        </p>''', unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("### 🚀")
-        if st.button("▶ Iniciar Screener", type="primary", use_container_width=True):
-            st.session_state['show_screener'] = True
-            st.rerun()
-    
-    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-    
-    st.markdown("### 🔑 Funcionalidades Principais")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown(f"""
-        <div class="feature-card">
-            <h4 style="color: {COLORS['sweep']};">💧 Liquidity Sweeps</h4>
-            <p style="color: #A0A0A0; font-size: 0.8rem;">Detecção de varreduras de liquidez (sweeps) que validam topos e fundos fortes</p>
+    <div class="hero-wrapper">
+        <div class="hero-badge">⚡ Smart Money Concepts • B3 • ICT 2025 / 2026</div>
+        <div class="hero-title">SMC Cloud Screener<br>v3.0</div>
+        <div class="hero-subtitle">
+            Varredura diária de <strong>200+ ativos</strong> da B3 com lógica institucional SMC —
+            Liquidity Sweeps, BOS/CHOCH, Order Blocks, FVGs e Fibonacci.<br>
+            Apenas estruturas fortes com varredura de liquidez confirmada.
         </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div class="feature-card">
-            <h4 style="color: {COLORS['bull']};">🎯 BOS/CHOCH</h4>
-            <p style="color: #A0A0A0; font-size: 0.8rem;">Identificação de quebras de estrutura com validação de close de corpo</p>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat-item">
+            <div class="stat-number">200+</div>
+            <div class="stat-label">Ativos Monitorados</div>
         </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""
-        <div class="feature-card">
-            <h4 style="color: {COLORS['fib']};">📊 Fibonacci</h4>
-            <p style="color: #A0A0A0; font-size: 0.8rem;">Zonas de Discount (compra) e Premium (venda) com níveis 50%</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown(f"""
-        <div class="feature-card">
-            <h4 style="color: {COLORS['ob']};">🧱 Order Blocks + FVG</h4>
-            <p style="color: #A0A0A0; font-size: 0.8rem;">Blocos de ordem e Fair Value Gaps como POIs de alta confluência</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-number">280+</div>
-            <div class="stat-label">Ações B3</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-number">65</div>
-            <div class="stat-label">Ações B3</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""
-        <div class="stat-card">
+        <div class="stat-item">
             <div class="stat-number">D1</div>
             <div class="stat-label">Timeframe</div>
         </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-number">BOS</div>
-            <div class="stat-label">Sinais</div>
+        <div class="stat-item">
+            <div class="stat-number">6</div>
+            <div class="stat-label">Confluências SMC</div>
         </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-    
-    st.markdown("### ⚠️ Regras de Execução (MTF)")
-    
-    st.markdown("""
-    <div class="mtf-note">
-        <strong>Fluxo de Trabalho:</strong><br>
-        1. Aguarde o preço retornar ao POI no timeframe D1<br>
-        2. Mude para LTF (15min/1min) e espere CHOCH interno<br>
-        3. Entre apenas quando o fluxo do LTF se alinhar com a tendência D1<br>
-        4. Entrada: início do Order Block ou preenchimento parcial do FVG<br>
-        5. <strong>SL:</strong> Logo abaixo/acima do strong low/high<br>
-        6. <strong>TP:</strong> Primeiro alvo = topo/fundo fraco oposto
+        <div class="stat-item">
+            <div class="stat-number">100%</div>
+            <div class="stat-label">Automático</div>
+        </div>
+    </div>
+
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">💧</div>
+            <div class="feature-title">Liquidity Sweeps</div>
+            <div class="feature-desc">Detecta varreduras de liquidez que validam topos e fundos fortes. Descarta Fake BOS sem sweep prévio.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-title">BOS / CHOCH</div>
+            <div class="feature-desc">Identifica quebras de estrutura (continuação) e mudanças de caráter (reversão) com validação de close de corpo.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-title">Fibonacci</div>
+            <div class="feature-desc">Zonas de Discount (compra) e Premium (venda) com nível 50% como filtro de entrada de alta confluência.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧱</div>
+            <div class="feature-title">Order Blocks + FVG</div>
+            <div class="feature-desc">Blocos de ordem e Fair Value Gaps como POIs institucionais. Priorizados quando coincidem com OB+FVG.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-title">Gráficos Interativos</div>
+            <div class="feature-desc">Candlestick Plotly com marcações visuais de sweeps, BOS/CHOCH, OBs, FVGs e zonas Fibonacci.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔁</div>
+            <div class="feature-title">Nota MTF</div>
+            <div class="feature-desc">Lembrete de confirmação em timeframe menor (CHOCH LTF 15min/1min) antes da entrada real.</div>
+        </div>
+    </div>
+
+    <div class="disclaimer" style="max-width:900px;margin:0 auto 40px;">
+        ⚠️ <strong>Isenção de Responsabilidade:</strong> Este screener é uma ferramenta de análise técnica. Não constitui conselho financeiro.
+        Sempre realize sua própria análise e gestão de risco antes de operar.
     </div>
     """, unsafe_allow_html=True)
-    
-    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div style="text-align: center; color: #555; font-size: 0.8rem;">
-        <p>Desenvolvido com base em ICT/SMC 2025-2026 | Dados: Yahoo Finance</p>
-        <p>⚠️ <strong>Isenção de Responsabilidade:</strong> Este screener é uma ferramenta de análise. 
-        Não constitui conselho financeiro. Sempre faça sua própria análise antes de operar.</p>
-    </div>
-    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col2:
+        if st.button("🚀 Iniciar Screener", key="btn_start"):
+            st.session_state.page = 'screener'
+            st.rerun()
+
+
+# ─── Screener Page ───────────────────────────────────────────────────────────────
+def build_chart(df: pd.DataFrame, ticker: str) -> go.Figure:
+    """Build an interactive SMC chart for a given ticker DataFrame."""
+    df_plot = df.tail(120).copy()
+    df_plot = df_plot.reset_index(drop=True)
+
+    # Date axis
+    if 'Date' in df_plot.columns:
+        x_axis = pd.to_datetime(df_plot['Date']).dt.strftime('%Y-%m-%d')
+    else:
+        x_axis = list(range(len(df_plot)))
+
+    fig = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.05,
+        row_heights=[0.75, 0.25],
+        subplot_titles=[f"📈 {ticker} — SMC Chart (D1)", "Volume"]
+    )
+
+    # Candlestick
+    fig.add_trace(go.Candlestick(
+        x=x_axis,
+        open=df_plot['Open'],
+        high=df_plot['High'],
+        low=df_plot['Low'],
+        close=df_plot['Close'],
+        name='Preço',
+        increasing_line_color='#00c48c',
+        decreasing_line_color='#ff4d6d',
+        increasing_fillcolor='rgba(0,196,140,0.7)',
+        decreasing_fillcolor='rgba(255,77,109,0.7)',
+    ), row=1, col=1)
+
+    # Volume bars
+    colors_vol = ['#00c48c' if c >= o else '#ff4d6d'
+                  for c, o in zip(df_plot['Close'], df_plot['Open'])]
+    fig.add_trace(go.Bar(
+        x=x_axis, y=df_plot['Volume'],
+        name='Volume',
+        marker_color=colors_vol,
+        opacity=0.6,
+    ), row=2, col=1)
+
+    # Mark liquidity sweeps
+    if 'bull_sweep' in df_plot.columns:
+        sweep_bull = df_plot[df_plot['bull_sweep'] == True]
+        fig.add_trace(go.Scatter(
+            x=x_axis[sweep_bull.index] if not sweep_bull.empty else [],
+            y=sweep_bull['Low'] * 0.998 if not sweep_bull.empty else [],
+            mode='markers',
+            marker=dict(symbol='triangle-up', size=10, color='#00c48c'),
+            name='Bull Sweep',
+        ), row=1, col=1)
+
+    if 'bear_sweep' in df_plot.columns:
+        sweep_bear = df_plot[df_plot['bear_sweep'] == True]
+        fig.add_trace(go.Scatter(
+            x=x_axis[sweep_bear.index] if not sweep_bear.empty else [],
+            y=sweep_bear['High'] * 1.002 if not sweep_bear.empty else [],
+            mode='markers',
+            marker=dict(symbol='triangle-down', size=10, color='#ff4d6d'),
+            name='Bear Sweep',
+        ), row=1, col=1)
+
+    # BOS Bull lines
+    if 'bos_bull' in df_plot.columns:
+        bos_bull_idx = df_plot[df_plot['bos_bull'] == True].index
+        for idx in bos_bull_idx:
+            fig.add_vline(
+                x=x_axis[idx],
+                line_width=1.5, line_dash='dash',
+                line_color='rgba(0,196,140,0.6)',
+                annotation_text='BOS ▲',
+                annotation_font_color='#00c48c',
+                annotation_font_size=10,
+            )
+
+    # BOS Bear lines
+    if 'bos_bear' in df_plot.columns:
+        bos_bear_idx = df_plot[df_plot['bos_bear'] == True].index
+        for idx in bos_bear_idx:
+            fig.add_vline(
+                x=x_axis[idx],
+                line_width=1.5, line_dash='dash',
+                line_color='rgba(255,77,109,0.6)',
+                annotation_text='BOS ▼',
+                annotation_font_color='#ff4d6d',
+                annotation_font_size=10,
+            )
+
+    # CHOCH lines
+    if 'choch_bull' in df_plot.columns:
+        choch_bull_idx = df_plot[df_plot['choch_bull'] == True].index
+        for idx in choch_bull_idx:
+            fig.add_vline(
+                x=x_axis[idx],
+                line_width=2, line_dash='dot',
+                line_color='rgba(124,92,191,0.8)',
+                annotation_text='CHOCH ▲',
+                annotation_font_color='#a07ee0',
+                annotation_font_size=10,
+            )
+
+    if 'choch_bear' in df_plot.columns:
+        choch_bear_idx = df_plot[df_plot['choch_bear'] == True].index
+        for idx in choch_bear_idx:
+            fig.add_vline(
+                x=x_axis[idx],
+                line_width=2, line_dash='dot',
+                line_color='rgba(124,92,191,0.8)',
+                annotation_text='CHOCH ▼',
+                annotation_font_color='#a07ee0',
+                annotation_font_size=10,
+            )
+
+    # Strong lows / highs
+    if 'strong_low' in df_plot.columns:
+        sl_rows = df_plot[df_plot['strong_low'] == True]
+        for _, row_data in sl_rows.iterrows():
+            fig.add_hline(
+                y=row_data['Low'],
+                line_width=1, line_dash='dot',
+                line_color='rgba(0,196,140,0.4)',
+            )
+
+    if 'strong_high' in df_plot.columns:
+        sh_rows = df_plot[df_plot['strong_high'] == True]
+        for _, row_data in sh_rows.iterrows():
+            fig.add_hline(
+                y=row_data['High'],
+                line_width=1, line_dash='dot',
+                line_color='rgba(255,77,109,0.4)',
+            )
+
+    fig.update_layout(
+        template='plotly_dark',
+        paper_bgcolor='rgba(13,13,26,0)',
+        plot_bgcolor='rgba(13,13,26,0)',
+        font=dict(family='Inter', color='#e8e8f0', size=12),
+        xaxis_rangeslider_visible=False,
+        legend=dict(
+            orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1,
+            bgcolor='rgba(13,13,26,0.5)', bordercolor='rgba(74,144,217,0.3)',
+        ),
+        margin=dict(l=10, r=10, t=50, b=10),
+        height=550,
+    )
+    fig.update_xaxes(showgrid=True, gridcolor='rgba(255,255,255,0.05)')
+    fig.update_yaxes(showgrid=True, gridcolor='rgba(255,255,255,0.05)')
+
+    return fig
 
 
 def screener_page():
-    """Main screener page."""
-    
-    st.markdown("""
-    <style>
-    .header-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #00C805;
-    }
-    .filter-badge {
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([3, 1])
-    
-    with col1:
-        st.markdown('<p class="header-title">📈 SMC Screener - Sinais Ativos</p>', unsafe_allow_html=True)
-    
-    with col2:
-        if st.button("← Voltar", use_container_width=True):
-            st.session_state['show_screener'] = False
-            st.rerun()
-    
+    # ─ Sidebar ─────────────────────────────────────────────────────────────────
     with st.sidebar:
-        st.markdown("### ⚙️ Configurações")
-        
-        signal_filter = st.multiselect(
-            "Filtrar Sinais",
-            ["bull", "bear"],
-            default=["bull", "bear"]
+        st.markdown("### ⚙️ SMC Screener v3.0")
+        st.divider()
+
+        if st.button("🏠 Voltar à Landing Page", key="btn_home"):
+            st.session_state.page = 'landing'
+            st.rerun()
+
+        st.markdown("#### 🔍 Filtros")
+        filter_type = st.selectbox(
+            "Tipo de Sinal",
+            ["Todos", "BOS", "CHOCH"],
+            key="filter_type"
         )
-        
-        zone_filter = st.multiselect(
-            "Filtrar Zona",
-            ["discount", "premium", "reversal"],
-            default=["discount", "premium", "reversal"]
+        filter_dir = st.selectbox(
+            "Direção",
+            ["Todas", "Alta (Bull)", "Baixa (Bear)"],
+            key="filter_dir"
         )
-        
-        st.markdown("---")
-        st.markdown("### 📊 Legenda")
-        st.markdown(f"<span style='color: {COLORS['bull']}'>🟢 Bullish</span>", unsafe_allow_html=True)
-        st.markdown(f"<span style='color: {COLORS['bear']}'>🔴 Bearish</span>", unsafe_allow_html=True)
-        st.markdown(f"<span style='color: {COLORS['sweep']}'>🟡 Sweep</span>", unsafe_allow_html=True)
-        st.markdown(f"<span style='color: {COLORS['ob']}'>🟣 Order Block</span>", unsafe_allow_html=True)
-        st.markdown(f"<span style='color: {COLORS['fvg']}'>🔵 FVG</span>", unsafe_allow_html=True)
-        st.markdown(f"<span style='color: {COLORS['fib']}'>🟠 Fibonacci</span>", unsafe_allow_html=True)
-    
-    if 'signals_df' not in st.session_state:
-        with st.spinner('🔄 Executando screener... isso pode levar alguns minutos'):
-            st.session_state['signals_df'] = run_screener()
-    
-    df = st.session_state['signals_df']
-    
-    if not df.empty:
-        if signal_filter:
-            df = df[df['signal'].isin(signal_filter)]
-        if zone_filter:
-            df = df[df['zone'].isin(zone_filter)]
-        
-        st.markdown(f"### 📊 Encontrados: {len(df)} sinais")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Sinais Bull", len(df[df['signal'] == 'bull']))
-        with col2:
-            st.metric("Sinais Bear", len(df[df['signal'] == 'bear']))
-        with col3:
-            st.metric("Discount", len(df[df['zone'] == 'discount']))
-        with col4:
-            st.metric("Premium", len(df[df['zone'] == 'premium']))
-        
-        st.markdown("---")
-        
-        def color_signal(val):
-            if val == 'bull':
-                return f'color: {COLORS["bull"]}; font-weight: bold;'
-            elif val == 'bear':
-                return f'color: {COLORS["bear"]}; font-weight: bold;'
-            return ''
-        
-        styled_df = df.style.applymap(color_signal, subset=['signal'])\
-            .format({
-                'price': 'R$ {:.2f}',
-                'poi_price': 'R$ {:.2f}',
-                'sl': 'R$ {:.2f}',
-                'tp1': 'R$ {:.2f}',
-                'rr': '{:.2f}'
-            })
-        
-        st.dataframe(styled_df, use_container_width=True, height=400)
-        
-        st.markdown("---")
-        st.markdown("### 📈 Análise Gráfica")
-        
-        selected_ticker = st.selectbox("Selecione um ativo para análise", df['ticker'].tolist())
-        
-        if selected_ticker:
-            ticker_data = pd.read_csv('tickers_b3.csv')
-            ticker_symbol = f"{selected_ticker}.SA"
-            
-            with st.spinner(f'Carregando dados de {selected_ticker}...'):
-                data = yf.download(ticker_symbol, period='2y', interval='1d', progress=False)
-                data.columns = COLUMNS
-                
-                fig = create_chart(data, selected_ticker)
-                st.plotly_chart(fig, use_container_width=True)
-                
-                st.markdown("### 📋 Detalhes do Sinal")
-                signal_data = df[df['ticker'] == selected_ticker].iloc[0]
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Tipo", signal_data['signal'].upper())
-                with col2:
-                    st.metric("Zona", signal_data['zone'].upper())
-                with col3:
-                    st.metric("RR", f"{signal_data['rr']:.2f}")
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Preço Atual", f"R$ {signal_data['price']:.2f}")
-                with col2:
-                    st.metric("POI", f"R$ {signal_data['poi_price']:.2f}" if pd.notna(signal_data['poi_price']) else "N/A")
-                with col3:
-                    st.metric("POI Type", signal_data['poi_type'].upper() if pd.notna(signal_data['poi_type']) else "N/A")
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("Stop Loss", f"R$ {signal_data['sl']:.2f}" if pd.notna(signal_data['sl']) else "N/A")
-                with col2:
-                    st.metric("Take Profit 1", f"R$ {signal_data['tp1']:.2f}" if pd.notna(signal_data['tp1']) else "N/A")
-                
-                st.info(f"💡 {signal_data['mtf_note']}")
-                
+        filter_zone = st.selectbox(
+            "Zona Fibonacci",
+            ["Todas", "Discount", "Premium", "Reversal"],
+            key="filter_zone"
+        )
+
+        st.divider()
+        st.markdown("#### 📋 MTF Nota de Execução")
+        st.markdown("""
+        <div class="mtf-note">
+        1. Aguarde o preço chegar ao POI no D1<br>
+        2. Mude para LTF (15min/1min)<br>
+        3. Espere CHOCH interno no LTF<br>
+        4. Entre quando fluxo LTF alinhar com D1<br>
+        5. SL: abaixo/acima do strong level<br>
+        6. TP: próximo weak high/low oposto
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.divider()
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.session_state.last_run:
+                st.caption(f"🕐 Última varredura:\n{st.session_state.last_run.strftime('%H:%M')}")
+        with col_b:
+            if st.button("🔄 Novo Scan", key="btn_rescan"):
+                st.session_state.signals_df = None
+
+    # ─ Header ──────────────────────────────────────────────────────────────────
+    st.markdown("""
+    <div style="padding: 20px 0 10px;">
+        <h1 style="font-size:2rem;font-weight:800;
+                   background:linear-gradient(135deg,#fff 0%,#a0bfe8 60%,#7c5cbf 100%);
+                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                   background-clip:text;margin:0;">
+            📈 SMC Screener — Sinais Ativos
+        </h1>
+        <p style="color:#8888aa;margin-top:6px;font-size:0.9rem;">
+            Varredura Diária (D1) • Lógica ICT/SMC 2025-2026 • Apenas Estruturas com Sweep Confirmado
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ─ Run screener ────────────────────────────────────────────────────────────
+    if st.session_state.signals_df is None:
+        with st.spinner("🔍 Varrendo 200+ ativos da B3... Aguarde (pode levar 1-3 minutos)"):
+            try:
+                signals = run_screener('tickers_b3.csv')
+                st.session_state.signals_df = signals
+                st.session_state.last_run = datetime.datetime.now()
+            except Exception as e:
+                st.error(f"Erro ao executar screener: {e}")
+                st.session_state.signals_df = pd.DataFrame()
+
+    signals_df = st.session_state.signals_df
+
+    # ─ Apply filters ────────────────────────────────────────────────────────────
+    filtered = signals_df.copy() if signals_df is not None and not signals_df.empty else pd.DataFrame()
+
+    if not filtered.empty:
+        if filter_type != "Todos":
+            filtered = filtered[filtered['Tipo'] == filter_type]
+        if filter_dir == "Alta (Bull)":
+            filtered = filtered[filtered['Sinal'] == 'bull']
+        elif filter_dir == "Baixa (Bear)":
+            filtered = filtered[filtered['Sinal'] == 'bear']
+        if filter_zone != "Todas":
+            filtered = filtered[filtered['Zona'].str.title() == filter_zone]
+
+    # ─ KPI metrics ──────────────────────────────────────────────────────────────
+    col1, col2, col3, col4 = st.columns(4)
+    total = len(filtered) if not filtered.empty else 0
+    bull_count = len(filtered[filtered['Sinal'] == 'bull']) if not filtered.empty else 0
+    bear_count = len(filtered[filtered['Sinal'] == 'bear']) if not filtered.empty else 0
+    bos_count = len(filtered[filtered['Tipo'] == 'BOS']) if not filtered.empty else 0
+
+    col1.metric("🎯 Sinais Totais", total)
+    col2.metric("🟢 Alta (Bull)", bull_count)
+    col3.metric("🔴 Baixa (Bear)", bear_count)
+    col4.metric("📊 BOS", bos_count)
+
+    st.divider()
+
+    # ─ Table ────────────────────────────────────────────────────────────────────
+    if filtered.empty:
+        st.markdown("""
+        <div style="text-align:center;padding:60px 20px;">
+            <div style="font-size:3rem;margin-bottom:16px;">🔍</div>
+            <div style="font-size:1.2rem;color:#8888aa;">Nenhum sinal encontrado com os filtros aplicados.</div>
+            <div style="font-size:0.85rem;color:#666688;margin-top:8px;">
+                Tente alterar os filtros ou clique em "Novo Scan" para atualizar.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        st.warning("⚠️ Nenhum sinal encontrado com os critérios selecionados.")
-        st.info("Tente ajustar o filtro de RR mínimo ou os filtros de sinais/zonas.")
-    
-    if st.button("🔄 Atualizar Screener"):
-        st.session_state.pop('signals_df', None)
-        st.rerun()
+        # Style helper columns
+        display_df = filtered.drop(columns=['Nota MTF'], errors='ignore').copy()
+
+        # Format direction column for display
+        if 'Sinal' in display_df.columns:
+            display_df['Sinal'] = display_df['Sinal'].apply(
+                lambda x: '🟢 Bull' if x == 'bull' else '🔴 Bear'
+            )
+        if 'Zona' in display_df.columns:
+            display_df['Zona'] = display_df['Zona'].apply(
+                lambda x: '🔵 Discount' if x == 'discount'
+                else ('🟡 Premium' if x == 'premium'
+                      else ('🟣 Reversal' if x == 'reversal' else x))
+            )
+
+        st.dataframe(
+            display_df,
+            use_container_width=True,
+            height=min(500, 80 + 38 * len(display_df)),
+            hide_index=True,
+        )
+
+        st.caption(f"Exibindo {len(display_df)} sino(s) | última varredura: {st.session_state.last_run.strftime('%d/%m/%Y %H:%M') if st.session_state.last_run else '—'}")
+
+        # ─ Chart section ──────────────────────────────────────────────────────
+        st.divider()
+        st.markdown("### 📊 Gráfico Interativo")
+
+        tickers_available = filtered['Ticker'].unique().tolist() if not filtered.empty else []
+        if tickers_available:
+            selected_ticker = st.selectbox(
+                "Selecione o ativo para visualizar",
+                tickers_available,
+                key="chart_ticker"
+            )
+
+            with st.spinner(f"Carregando gráfico de {selected_ticker}..."):
+                try:
+                    import yfinance as yf
+                    df_raw = yf.download(
+                        f"{selected_ticker}.SA",
+                        period='6mo',
+                        interval='1d',
+                        progress=False,
+                        auto_adjust=True
+                    )
+                    if isinstance(df_raw.columns, pd.MultiIndex):
+                        df_raw.columns = df_raw.columns.get_level_values(0)
+                    df_raw = df_raw[['Open', 'High', 'Low', 'Close', 'Volume']].copy()
+                    df_raw.dropna(inplace=True)
+                    df_raw.reset_index(inplace=True)
+                    df_raw.reset_index(drop=True, inplace=True)
+
+                    from screener_logic import detect_smc_signals
+                    df_analyzed = detect_smc_signals(df_raw)
+                    fig = build_chart(df_analyzed, selected_ticker)
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    # MTF note
+                    mtf_row = filtered[filtered['Ticker'] == selected_ticker].iloc[0]
+                    direction_label = "📈 Alta (Bull)" if mtf_row['Sinal'] in ['bull', '🟢 Bull'] else "📉 Baixa (Bear)"
+                    tipo_label = mtf_row.get('Tipo', '—')
+                    zona_label = mtf_row.get('Zona', '—')
+
+                    st.markdown(f"""
+                    <div class="mtf-note">
+                        <strong>{selected_ticker}</strong> — {direction_label} | {tipo_label} | Zona: {zona_label}<br>
+                        ⚠️ <em>Aguardar CHOCH interno no LTF (15min/1min) + alinhamento de fluxo antes de operar.</em>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                except Exception as e:
+                    st.error(f"Erro ao gerar gráfico: {e}")
 
 
-def main():
-    """Main application."""
-    
-    if 'show_screener' not in st.session_state:
-        st.session_state['show_screener'] = False
-    
-    if st.session_state['show_screener']:
-        screener_page()
-    else:
-        landing_page()
-
-
-if __name__ == '__main__':
-    main()
+# ─── Router ─────────────────────────────────────────────────────────────────────
+if st.session_state.page == 'landing':
+    landing_page()
+else:
+    screener_page()
