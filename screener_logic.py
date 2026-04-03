@@ -11,34 +11,41 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-def download_data_batch(tickers: list, period: str = '2y', interval: str = '1d', max_workers: int = 10) -> dict:
-    """Download data in parallel using ThreadPoolExecutor."""
+def download_data_batch(tickers: list, period: str = '2y', interval: str = '1d') -> dict:
+    """Download data using yfinance's native batch capabilities."""
     data = {}
+    
+    # yfinance natively handles batch downloading robustly
+    df_batch = yf.download(tickers, period=period, interval=interval, group_by='ticker', progress=False, auto_adjust=True)
+    
+    if df_batch is None or df_batch.empty:
+        return data
 
-    def download_ticker(ticker):
+    for ticker in tickers:
         try:
-            df = yf.download(ticker, period=period, interval=interval, progress=False, auto_adjust=True)
-            if df is None or df.empty:
-                return ticker, None
-            # Flatten MultiIndex columns if present
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
-            df = df[['Open', 'High', 'Low', 'Close', 'Volume']].copy()
+            # Extract data for specific ticker
+            if len(tickers) > 1:
+                if ticker not in df_batch.columns.levels[0]:
+                    continue
+                df = df_batch[ticker].copy()
+            else:
+                df = df_batch.copy()
+            
             df.dropna(inplace=True)
+            if df.empty:
+                continue
+                
             df.reset_index(inplace=True)
             if 'Date' not in df.columns and 'Datetime' in df.columns:
                 df.rename(columns={'Datetime': 'Date'}, inplace=True)
-            df.reset_index(drop=True, inplace=True)
-            return ticker, df
+                
+            # If the date column is still an index named Date
+            if 'Date' not in df.columns and df.index.name == 'Date':
+                df.reset_index(inplace=True)
+                
+            data[ticker] = df
         except Exception:
-            return ticker, None
-
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {executor.submit(download_ticker, t): t for t in tickers}
-        for future in as_completed(futures):
-            ticker, df = future.result()
-            if df is not None and not df.empty:
-                data[ticker] = df
+            continue
 
     return data
 
@@ -374,7 +381,8 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
     """Run the complete screener on all tickers."""
     try:
         tickers_df = pd.read_csv(tickers_file)
-        tickers = [f"{t}.SA" for t in tickers_df['ticker'].tolist()]
+        # Deduplicate to prevent processing the same asset multiple times
+        tickers = list(set([f"{t}.SA" for t in tickers_df['ticker'].dropna()]))
     except Exception as e:
         print(f"Erro ao ler tickers: {e}")
         return pd.DataFrame()
