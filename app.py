@@ -510,7 +510,7 @@ def landing_page():
 
 
 # ─── Chart Builder ───────────────────────────────────────────────────────────────
-def build_chart(df: pd.DataFrame, ticker: str) -> go.Figure:
+def build_chart(df: pd.DataFrame, ticker: str, trade_info: dict = None) -> go.Figure:
     df_plot = df.tail(120).copy().reset_index(drop=True)
     x_axis = (pd.to_datetime(df_plot['Date']).dt.strftime('%Y-%m-%d')
                if 'Date' in df_plot.columns else list(range(len(df_plot))))
@@ -572,15 +572,35 @@ def build_chart(df: pd.DataFrame, ticker: str) -> go.Figure:
             fig.add_hline(y=r['High'], line_width=1, line_dash='dot',
                           line_color='rgba(244,67,108,0.3)')
 
+    if trade_info:
+        entry = trade_info.get('entry')
+        sl = trade_info.get('sl')
+        tp = trade_info.get('tp')
+        # Invisible points to force Plotly to scale the Y-axis to include SL and TP
+        last_x = x_axis.iloc[-1] if hasattr(x_axis, 'iloc') else x_axis[-1]
+        fig.add_trace(go.Scatter(x=[last_x, last_x], y=[sl, tp], mode='markers', 
+                                 marker=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'), row=1, col=1)
+        
+        fig.add_hline(y=entry, line_width=1.5, line_dash='dashdot', line_color='#4f8ef7',
+                      annotation_text=f" Entrada ({entry:.2f})", annotation_position="top left",
+                      annotation_font=dict(color='#4f8ef7', size=11, family='Inter'))
+        fig.add_hline(y=sl, line_width=1.5, line_color='#f4436c',
+                      annotation_text=f" Stop Loss ({sl:.2f})", annotation_position="bottom left",
+                      annotation_font=dict(color='#f4436c', size=11, family='Inter'))
+        fig.add_hline(y=tp, line_width=1.5, line_color='#10d9a0',
+                      annotation_text=f" Alvo ({tp:.2f})", annotation_position="top left",
+                      annotation_font=dict(color='#10d9a0', size=11, family='Inter'))
+
     fig.update_layout(
         template='plotly_dark', paper_bgcolor='rgba(7,7,26,0)', plot_bgcolor='rgba(7,7,26,0)',
         font=dict(family='Inter', color='#f1f1fa', size=12),
         xaxis_rangeslider_visible=False,
-        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1,
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0,
                     bgcolor='rgba(7,7,26,0.5)', bordercolor='rgba(79,142,247,0.25)'),
-        margin=dict(l=10, r=10, t=50, b=10), height=540)
+        margin=dict(l=10, r=40, t=50, b=10), height=540)
     fig.update_xaxes(showgrid=True, gridcolor='rgba(255,255,255,0.04)')
-    fig.update_yaxes(showgrid=True, gridcolor='rgba(255,255,255,0.04)')
+    fig.update_yaxes(showgrid=True, gridcolor='rgba(255,255,255,0.04)', side='right', row=1, col=1)
+    fig.update_yaxes(showgrid=True, gridcolor='rgba(255,255,255,0.04)', side='right', row=2, col=1)
     return fig
 
 
@@ -744,10 +764,17 @@ def screener_page():
                         df_raw.rename(columns={'Datetime': 'Date'}, inplace=True)
                     df_raw.reset_index(drop=True, inplace=True)
                     df_analyzed = detect_smc_signals(df_raw)
-                    fig = build_chart(df_analyzed, selected_ticker)
+                    
+                    mtf_row = filtered[filtered['Ticker'] == selected_ticker].iloc[0]
+                    trade_info = {
+                        'entry': float(mtf_row['Preço']),
+                        'sl': float(mtf_row['SL']),
+                        'tp': float(mtf_row['TP1'])
+                    }
+                    
+                    fig = build_chart(df_analyzed, selected_ticker, trade_info=trade_info)
                     st.plotly_chart(fig, use_container_width=True)
 
-                    mtf_row = filtered[filtered['Ticker'] == selected_ticker].iloc[0]
                     dir_label = "📈 Alta (Bull)" if mtf_row['Sinal'] in ['bull', '🟢 Bull'] else "📉 Baixa (Bear)"
                     st.markdown(f"""
                     <div class="mtf-note">
