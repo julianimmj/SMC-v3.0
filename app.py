@@ -664,19 +664,19 @@ def screener_page():
 
     st.markdown('<div class="metric-btn">', unsafe_allow_html=True)
     with col1:
-        if st.button(f"🎯 Sinais Totais \\n {total}", key="btn_m_all"):
+        if st.button(f"🎯 Totais: {total}", key="btn_m_all"):
             st.session_state.filter_dir = "Todas"
             st.rerun()
     with col2:
-        if st.button(f"🟢 Alta (Bull) \\n {bull}", key="btn_m_bull"):
+        if st.button(f"🟢 Alta: {bull}", key="btn_m_bull"):
             st.session_state.filter_dir = "Alta (Bull)"
             st.rerun()
     with col3:
-        if st.button(f"🔴 Baixa (Bear) \\n {bear}", key="btn_m_bear"):
+        if st.button(f"🔴 Baixa: {bear}", key="btn_m_bear"):
             st.session_state.filter_dir = "Baixa (Bear)"
             st.rerun()
     with col4:
-        if st.button(f"📊 Apenas BOS \\n {bos}", key="btn_m_bos"):
+        if st.button(f"📊 BOS: {bos}", key="btn_m_bos"):
             st.session_state.filter_type = "BOS"
             st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
