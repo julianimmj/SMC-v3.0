@@ -716,7 +716,7 @@ def screener_page():
                     "POI Preço": st.column_config.NumberColumn("POI Preço", format="$%f", width="small"),
                     "Zona": st.column_config.TextColumn("Zona", width="medium"),
                     "SL": st.column_config.NumberColumn("Stop Loss", format="$%f", width="small"),
-                    "TP1": st.column_config.NumberColumn("Take Profit 1", format="$%f", width="small"),
+                    "TP1": st.column_config.NumberColumn("Alvo", format="$%f", width="small"),
                     "RR": st.column_config.NumberColumn("RR", format="%.2f", width="small")
                 }
             )
