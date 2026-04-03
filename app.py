@@ -16,7 +16,7 @@ st.set_page_config(
     page_title="SMC Cloud Screener v3.0",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ─── CSS ────────────────────────────────────────────────────────────────────────
@@ -287,6 +287,32 @@ header[data-testid="stHeader"] { display: none !important; }
 div[data-testid="metric-container"] {
     background: var(--glass) !important; border: 1px solid var(--border) !important;
     border-radius: 12px !important; padding: 16px !important;
+}
+.metric-btn > button {
+    background: var(--glass) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    padding: 18px 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: auto !important;
+    width: 100% !important;
+}
+.metric-btn > button:hover {
+    border-color: var(--accent) !important;
+    background: rgba(79,142,247,0.06) !important;
+    transform: translateY(-2px) !important;
+}
+.metric-btn > button p {
+    font-size: 1.4rem !important; 
+    font-weight: 800 !important;
+    margin: 0 !important;
+    color: var(--t1) !important;
+}
+.metric-btn > button div:first-child {
+    font-size: 0.95rem !important;
 }
 .stButton > button {
     background: linear-gradient(130deg, var(--accent), var(--accent2)) !important;
@@ -617,6 +643,9 @@ def screener_page():
                 else pd.DataFrame())
 
     if not filtered.empty:
+        # ─── HIDDEN RULE: ONLY SHOW RR > 3 ──────────────────────────────
+        filtered = filtered[filtered['RR'] > 3]
+        
         if filter_type != "Todos":
             filtered = filtered[filtered['Tipo'] == filter_type]
         if filter_dir == "Alta (Bull)":
@@ -632,10 +661,25 @@ def screener_page():
     bull  = len(filtered[filtered['Sinal'] == 'bull']) if not filtered.empty else 0
     bear  = len(filtered[filtered['Sinal'] == 'bear']) if not filtered.empty else 0
     bos   = len(filtered[filtered['Tipo']  == 'BOS'])  if not filtered.empty else 0
-    col1.metric("🎯 Sinais Totais", total)
-    col2.metric("🟢 Alta (Bull)", bull)
-    col3.metric("🔴 Baixa (Bear)", bear)
-    col4.metric("📊 BOS", bos)
+
+    st.markdown('<div class="metric-btn">', unsafe_allow_html=True)
+    with col1:
+        if st.button(f"🎯 Sinais Totais \\n {total}", key="btn_m_all"):
+            st.session_state.filter_dir = "Todas"
+            st.rerun()
+    with col2:
+        if st.button(f"🟢 Alta (Bull) \\n {bull}", key="btn_m_bull"):
+            st.session_state.filter_dir = "Alta (Bull)"
+            st.rerun()
+    with col3:
+        if st.button(f"🔴 Baixa (Bear) \\n {bear}", key="btn_m_bear"):
+            st.session_state.filter_dir = "Baixa (Bear)"
+            st.rerun()
+    with col4:
+        if st.button(f"📊 Apenas BOS \\n {bos}", key="btn_m_bos"):
+            st.session_state.filter_type = "BOS"
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.divider()
 
@@ -658,10 +702,26 @@ def screener_page():
                 else ('🟡 Premium' if x == 'premium'
                       else ('🟣 Reversal' if x == 'reversal' else (x or '—'))))
 
-        st.dataframe(display_df, use_container_width=True,
-                     height=min(520, 80 + 38 * len(display_df)), hide_index=True)
+        st.dataframe(
+            display_df,
+            use_container_width=False,
+            height=min(520, 80 + 38 * len(display_df)),
+            hide_index=True,
+            column_config={
+                "Ticker": st.column_config.TextColumn("Ticker", width="small"),
+                "Sinal": st.column_config.TextColumn("Sinal", width="small"),
+                "Tipo": st.column_config.TextColumn("Tipo", width="small"),
+                "Preço": st.column_config.NumberColumn("Preço", format="$%f", width="small"),
+                "POI": st.column_config.TextColumn("POI", width="medium"),
+                "POI Preço": st.column_config.NumberColumn("POI Preço", format="$%f", width="small"),
+                "Zona": st.column_config.TextColumn("Zona", width="medium"),
+                "SL": st.column_config.NumberColumn("SL", format="$%f", width="small"),
+                "TP1": st.column_config.NumberColumn("TP1", format="$%f", width="small"),
+                "RR": st.column_config.NumberColumn("RR", format="%.2f", width="small")
+            }
+        )
         st.caption(
-            f"Exibindo {len(display_df)} sinal(is) | "
+            f"Exibindo {len(display_df)} sinal(is) rigorosamente filtrados (RR > 3) | "
             f"última varredura: "
             f"{st.session_state.last_run.strftime('%d/%m/%Y %H:%M') if st.session_state.last_run else '—'}"
         )
@@ -674,14 +734,13 @@ def screener_page():
             with st.spinner(f"Carregando gráfico de {selected_ticker}..."):
                 try:
                     import yfinance as yf
-                    df_raw = yf.download(
-                        f"{selected_ticker}.SA", period='6mo', interval='1d',
-                        progress=False, auto_adjust=True)
-                    if isinstance(df_raw.columns, pd.MultiIndex):
-                        df_raw.columns = df_raw.columns.get_level_values(0)
+                    ticker_obj = yf.Ticker(f"{selected_ticker}.SA")
+                    df_raw = ticker_obj.history(period='6mo', interval='1d', auto_adjust=True)
                     df_raw = df_raw[['Open', 'High', 'Low', 'Close', 'Volume']].copy()
                     df_raw.dropna(inplace=True)
                     df_raw.reset_index(inplace=True)
+                    if 'Date' not in df_raw.columns and 'Datetime' in df_raw.columns:
+                        df_raw.rename(columns={'Datetime': 'Date'}, inplace=True)
                     df_raw.reset_index(drop=True, inplace=True)
                     df_analyzed = detect_smc_signals(df_raw)
                     fig = build_chart(df_analyzed, selected_ticker)
