@@ -244,7 +244,7 @@ header[data-testid="stHeader"] { display: none !important; }
     background: var(--glass);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 20px 18px;
+    padding: 22px 20px;
     backdrop-filter: blur(20px);
     position: relative; overflow: hidden;
     transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
@@ -261,14 +261,14 @@ header[data-testid="stHeader"] { display: none !important; }
     pointer-events: none;
 }
 .fiw {
-    width: 36px; height: 36px; border-radius: 10px;
+    width: 38px; height: 38px; border-radius: 10px;
     background: var(--glass2); border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem; margin-bottom: 12px;
+    font-size: 1.2rem; margin-bottom: 13px;
 }
-.fttl { font-size: 0.86rem; font-weight: 700; color: var(--t1); margin-bottom: 6px; }
-.fdsc { font-size: 0.76rem; color: var(--t2); line-height: 1.55; }
-.fstp { margin-top: 10px; font-size: 0.58rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); opacity: 0.55; }
+.fttl { font-size: 0.95rem; font-weight: 700; color: var(--t1); margin-bottom: 7px; }
+.fdsc { font-size: 0.83rem; color: var(--t2); line-height: 1.6; }
+.fstp { margin-top: 12px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); opacity: 0.6; }
 
 /* ══════════ CTA FOOTER ══════════ */
 .disc-bar {
@@ -370,23 +370,22 @@ def landing_page():
     """, unsafe_allow_html=True)
 
     # ── CTA Button + Stats numa linha compacta ────────────────────────────────────
-    col_btn, col_s1, col_s2, col_s3, col_s4 = st.columns([2, 1, 1, 1, 1])
+    # Padding horizontal via coluna vazia, stats via markdown puro
+    _pad, col_btn, col_s1, col_s2, col_s3, col_s4 = st.columns([0.45, 1.8, 0.9, 0.9, 0.9, 0.9])
     with col_btn:
-        st.markdown('<div style="padding: 0 52px 0 52px;">', unsafe_allow_html=True)
         if st.button("🚀  Iniciar Screener Agora", key="btn_start"):
             st.session_state.page = 'screener'
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
     with col_s1:
-        st.markdown('<div class="stat" style="border:none;padding:14px 8px;"><span class="snum" style="font-size:1.6rem;">200+</span><div class="slbl">Ativos</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:10px 0;"><span class="snum" style="font-size:1.55rem;">200+</span><div class="slbl">Ativos</div></div>', unsafe_allow_html=True)
     with col_s2:
-        st.markdown('<div class="stat" style="border:none;padding:14px 8px;"><span class="snum" style="font-size:1.6rem;">D1</span><div class="slbl">Timeframe</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:10px 0;"><span class="snum" style="font-size:1.55rem;">D1</span><div class="slbl">Timeframe</div></div>', unsafe_allow_html=True)
     with col_s3:
-        st.markdown('<div class="stat" style="border:none;padding:14px 8px;"><span class="snum" style="font-size:1.6rem;">6</span><div class="slbl">Validações</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:10px 0;"><span class="snum" style="font-size:1.55rem;">6</span><div class="slbl">Validações</div></div>', unsafe_allow_html=True)
     with col_s4:
-        st.markdown('<div class="stat" style="border:none;padding:14px 8px;"><span class="snum" style="font-size:1.6rem;">0%</span><div class="slbl">Fake BOS</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:10px 0;"><span class="snum" style="font-size:1.55rem;">0%</span><div class="slbl">Fake BOS</div></div>', unsafe_allow_html=True)
 
-    st.markdown('<div style="height:2px;background:linear-gradient(90deg,transparent,rgba(79,142,247,0.2),transparent);margin:0;"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height:2px;background:linear-gradient(90deg,transparent,rgba(79,142,247,0.2),transparent);margin:0 0 4px;"></div>', unsafe_allow_html=True)
 
     # 3 ── Fluxo MTF em destaque ──────────────────────────────────────────────────
     st.markdown("""
@@ -439,12 +438,27 @@ def landing_page():
          "→ Visualização"),
     ]
 
+    st.markdown('<div style="padding: 0 52px 0;">', unsafe_allow_html=True)
+    r1 = st.columns(3, gap="medium")
+    for idx, (icon, title, desc, step) in enumerate(CARDS[:3]):
+        with r1[idx]:
+            st.markdown(f"""
+            <div class="fcard">
+                <div class="fiw">{icon}</div>
+                <div class="fttl">{title}</div>
+                <div class="fdsc">{desc}</div>
+                <div class="fstp">{step}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # espaçamento entre linhas de cards
+    st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
+
     st.markdown('<div style="padding: 0 52px 28px;">', unsafe_allow_html=True)
-    r1 = st.columns(3, gap="small")
-    r2 = st.columns(3, gap="small")
-    for idx, (icon, title, desc, step) in enumerate(CARDS):
-        col = r1[idx] if idx < 3 else r2[idx - 3]
-        with col:
+    r2 = st.columns(3, gap="medium")
+    for idx, (icon, title, desc, step) in enumerate(CARDS[3:]):
+        with r2[idx]:
             st.markdown(f"""
             <div class="fcard">
                 <div class="fiw">{icon}</div>
