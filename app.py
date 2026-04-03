@@ -52,7 +52,7 @@ def download_data_batch(tickers: list, period: str = '2y', interval: str = '1d',
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = [col[0] for col in df.columns]
             df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
-            return ticker, df
+            return ticker, df.reset_index(drop=True)
         except:
             return ticker, None
     
@@ -124,21 +124,20 @@ def detect_bos_chooch(df: pd.DataFrame) -> pd.DataFrame:
     df['bos_bull'] = False
     df['bos_bear'] = False
     
+    df = df.reset_index(drop=True)
+    
     for i in range(1, len(df)):
         current_price = df.loc[i, 'Close']
         prev_close = df.loc[i-1, 'Close']
         
-        # Get the last strong level BEFORE this candle
         prior_strong_highs = df.loc[:i-1][df.loc[:i-1, 'strong_high']]
         prior_strong_lows = df.loc[:i-1][df.loc[:i-1, 'strong_low']]
         
-        # BOS bull: break above last strong high
         if len(prior_strong_highs) > 0:
             last_strong_high = prior_strong_highs['last_swing_high'].iloc[-1]
             if not pd.isna(last_strong_high) and current_price > last_strong_high and prev_close <= last_strong_high:
                 df.loc[i, 'bos_bull'] = True
         
-        # BOS bear: break below last strong low
         if len(prior_strong_lows) > 0:
             last_strong_low = prior_strong_lows['last_swing_low'].iloc[-1]
             if not pd.isna(last_strong_low) and current_price < last_strong_low and prev_close >= last_strong_low:
