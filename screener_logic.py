@@ -390,14 +390,16 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
             continue
 
         try:
-            df_result = detect_smc_signals(df)
+            df_result = detect_smc_signals(df.copy())
             signals = get_latest_signals(df_result)
 
             if not signals.empty:
                 latest = signals.iloc[-1]
                 if pd.notna(latest['signal']):
                     ticker_clean = ticker.replace('.SA', '')
-                    current_price = float(df_result.iloc[-1]['Close'])
+                    # Use the last row's Close from the original dataframe
+                    last_close = df['Close'].iloc[-1]
+                    current_price = float(last_close) if not isinstance(last_close, pd.Series) else float(last_close.iloc[0])
                     poi = latest.get('poi_price')
                     sl = latest.get('sl_price')
                     tp1 = latest.get('tp1_price')
