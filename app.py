@@ -656,8 +656,8 @@ def landing_page():
     with col2:
         st.markdown(f"""
         <div class="stat-card">
-            <div class="stat-number">45+</div>
-            <div class="stat-label">BDRs</div>
+            <div class="stat-number">65</div>
+            <div class="stat-label">Ações B3</div>
         </div>
         """, unsafe_allow_html=True)
     
@@ -672,8 +672,8 @@ def landing_page():
     with col4:
         st.markdown(f"""
         <div class="stat-card">
-            <div class="stat-number">1:3</div>
-            <div class="stat-label">RR Mínimo</div>
+            <div class="stat-number">BOS</div>
+            <div class="stat-label">Sinais</div>
         </div>
         """, unsafe_allow_html=True)
     
