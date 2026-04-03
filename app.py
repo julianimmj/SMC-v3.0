@@ -540,9 +540,11 @@ def build_chart(df: pd.DataFrame, ticker: str) -> go.Figure:
     ]:
         if col_name in df_plot.columns:
             for idx in df_plot[df_plot[col_name] == True].index:
-                fig.add_vline(x=x_axis[idx], line_width=1.5, line_dash=dash,
-                              line_color=color, annotation_text=label,
-                              annotation_font_color=color, annotation_font_size=10)
+                x_val = x_axis[idx]
+                fig.add_shape(type="line", x0=x_val, x1=x_val, y0=0, y1=1, xref='x', yref='paper',
+                              line=dict(color=color, width=1.5, dash=dash))
+                fig.add_annotation(x=x_val, y=0.96, yref='paper', text=label,
+                                   showarrow=False, font=dict(color=color, size=10))
 
     if 'bull_sweep' in df_plot.columns:
         sw = df_plot[df_plot['bull_sweep'] == True]
@@ -662,23 +664,18 @@ def screener_page():
     bear  = len(filtered[filtered['Sinal'] == 'bear']) if not filtered.empty else 0
     bos   = len(filtered[filtered['Tipo']  == 'BOS'])  if not filtered.empty else 0
 
+    def set_dir(val): st.session_state.filter_dir = val
+    def set_type(val): st.session_state.filter_type = val
+
     st.markdown('<div class="metric-btn">', unsafe_allow_html=True)
     with col1:
-        if st.button(f"🎯 Totais: {total}", key="btn_m_all"):
-            st.session_state.filter_dir = "Todas"
-            st.rerun()
+        st.button(f"🎯 Totais: {total}", key="btn_m_all", on_click=set_dir, args=("Todas",))
     with col2:
-        if st.button(f"🟢 Alta: {bull}", key="btn_m_bull"):
-            st.session_state.filter_dir = "Alta (Bull)"
-            st.rerun()
+        st.button(f"🟢 Alta: {bull}", key="btn_m_bull", on_click=set_dir, args=("Alta (Bull)",))
     with col3:
-        if st.button(f"🔴 Baixa: {bear}", key="btn_m_bear"):
-            st.session_state.filter_dir = "Baixa (Bear)"
-            st.rerun()
+        st.button(f"🔴 Baixa: {bear}", key="btn_m_bear", on_click=set_dir, args=("Baixa (Bear)",))
     with col4:
-        if st.button(f"📊 BOS: {bos}", key="btn_m_bos"):
-            st.session_state.filter_type = "BOS"
-            st.rerun()
+        st.button(f"📊 BOS: {bos}", key="btn_m_bos", on_click=set_type, args=("BOS",))
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.divider()
