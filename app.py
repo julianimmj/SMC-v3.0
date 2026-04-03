@@ -107,72 +107,42 @@ def detect_liquidity_sweeps(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def identify_strong_structures(df: pd.DataFrame) -> pd.DataFrame:
-    """Identify strong highs and lows that had prior liquidity sweep."""
+    """Simplified: after a sweep, that level becomes strong."""
     df = detect_liquidity_sweeps(df)
     
-    df['strong_low'] = False
-    df['strong_high'] = False
-    
-    for i in range(1, len(df)):
-        if df.loc[i, 'bull_sweep']:
-            swing_low = df.loc[i, 'swing_low']
-            if swing_low and not pd.isna(swing_low):
-                mask = (df['swing_low'] == swing_low) & (df.index > i)
-                if mask.any():
-                    df.loc[mask, 'strong_low'] = True
-        
-        if df.loc[i, 'bear_sweep']:
-            swing_high = df.loc[i, 'swing_high']
-            if swing_high and not pd.isna(swing_high):
-                mask = (df['swing_high'] == swing_high) & (df.index > i)
-                if mask.any():
-                    df.loc[mask, 'strong_high'] = True
+    # After any bull_sweep, the last_swing_low becomes strong
+    df['strong_low'] = df['bull_sweep'].ffill()
+    df['strong_high'] = df['bear_sweep'].ffill()
     
     return df
 
 
 def detect_bos_chooch(df: pd.DataFrame) -> pd.DataFrame:
-    """Detect BOS and CHOCH with close body validation."""
+    """Detect BOS using the most recent strong level."""
     df = identify_strong_structures(df)
     
     df['bos_bull'] = False
     df['bos_bear'] = False
-    df['chooch_bull'] = False
-    df['chooch_bear'] = False
-    
-    strong_highs = df[df['strong_high']]['High'].values
-    strong_lows = df[df['strong_low']]['Low'].values
-    
-    last_strong_high_idx = None
-    last_strong_low_idx = None
     
     for i in range(1, len(df)):
         current_price = df.loc[i, 'Close']
         prev_close = df.loc[i-1, 'Close']
         
-        for sh in strong_highs:
-            if sh and not pd.isna(sh):
-                if current_price > sh and prev_close <= sh:
-                    df.loc[i, 'bos_bull'] = True
-                    last_strong_high_idx = i
-                    break
+        # Get the last strong level BEFORE this candle
+        prior_strong_highs = df.loc[:i-1][df.loc[:i-1, 'strong_high']]
+        prior_strong_lows = df.loc[:i-1][df.loc[:i-1, 'strong_low']]
         
-        for sl in strong_lows:
-            if sl and not pd.isna(sl):
-                if current_price < sl and prev_close >= sl:
-                    df.loc[i, 'bos_bear'] = True
-                    last_strong_low_idx = i
-                    break
+        # BOS bull: break above last strong high
+        if len(prior_strong_highs) > 0:
+            last_strong_high = prior_strong_highs['last_swing_high'].iloc[-1]
+            if not pd.isna(last_strong_high) and current_price > last_strong_high and prev_close <= last_strong_high:
+                df.loc[i, 'bos_bull'] = True
         
-        if last_strong_low_idx is not None and i > last_strong_low_idx:
-            strong_low_after = df.loc[last_strong_low_idx, 'Low']
-            if current_price < strong_low_after and prev_close >= strong_low_after:
-                df.loc[i, 'chooch_bear'] = True
-        
-        if last_strong_high_idx is not None and i > last_strong_high_idx:
-            strong_high_after = df.loc[last_strong_high_idx, 'High']
-            if current_price > strong_high_after and prev_close <= strong_high_after:
-                df.loc[i, 'chooch_bull'] = True
+        # BOS bear: break below last strong low
+        if len(prior_strong_lows) > 0:
+            last_strong_low = prior_strong_lows['last_swing_low'].iloc[-1]
+            if not pd.isna(last_strong_low) and current_price < last_strong_low and prev_close >= last_strong_low:
+                df.loc[i, 'bos_bear'] = True
     
     return df
 
