@@ -412,8 +412,26 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
                     sl = latest.get('sl_price')
                     tp1 = latest.get('tp1_price')
 
-                    risk = abs(current_price - float(sl)) if pd.notna(sl) else 0
-                    reward = abs(float(tp1) - current_price) if pd.notna(tp1) else 0
+                    if pd.isna(poi) or pd.isna(sl) or pd.isna(tp1):
+                        continue
+
+                    poi = float(poi)
+                    sl = float(sl)
+                    tp1 = float(tp1)
+
+                    # Invalidation & Logic Check
+                    signal_idx = latest.name
+                    if latest['signal'] == 'bull':
+                        if poi <= sl: continue # Erro lógico: SL maior que Entrada
+                        if df.loc[signal_idx:, 'Low'].min() <= sl: continue # Já foi Stopado
+                        risk = abs(poi - sl)
+                        reward = abs(tp1 - poi)
+                    else: # bear
+                        if poi >= sl: continue # Erro lógico: SL menor que Entrada
+                        if df.loc[signal_idx:, 'High'].max() >= sl: continue # Já foi Stopado
+                        risk = abs(sl - poi)
+                        reward = abs(poi - tp1)
+
                     rr = round(reward / risk, 2) if risk > 0 else 0
 
                     all_signals.append({
