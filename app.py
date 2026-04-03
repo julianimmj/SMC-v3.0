@@ -702,29 +702,33 @@ def screener_page():
                 else ('🟡 Premium' if x == 'premium'
                       else ('🟣 Reversal' if x == 'reversal' else (x or '—'))))
 
-        st.dataframe(
-            display_df,
-            use_container_width=False,
-            height=min(520, 80 + 38 * len(display_df)),
-            hide_index=True,
-            column_config={
-                "Ticker": st.column_config.TextColumn("Ticker", width="small"),
-                "Sinal": st.column_config.TextColumn("Sinal", width="small"),
-                "Tipo": st.column_config.TextColumn("Tipo", width="small"),
-                "Preço": st.column_config.NumberColumn("Preço", format="$%f", width="small"),
-                "POI": st.column_config.TextColumn("POI", width="medium"),
-                "POI Preço": st.column_config.NumberColumn("POI Preço", format="$%f", width="small"),
-                "Zona": st.column_config.TextColumn("Zona", width="medium"),
-                "SL": st.column_config.NumberColumn("SL", format="$%f", width="small"),
-                "TP1": st.column_config.NumberColumn("TP1", format="$%f", width="small"),
-                "RR": st.column_config.NumberColumn("RR", format="%.2f", width="small")
-            }
-        )
-        st.caption(
-            f"Exibindo {len(display_df)} sinal(is) rigorosamente filtrados (RR > 3) | "
-            f"última varredura: "
-            f"{st.session_state.last_run.strftime('%d/%m/%Y %H:%M') if st.session_state.last_run else '—'}"
-        )
+        # Use columns to manually center the dataframe
+        c_left, c_cen, c_right = st.columns([1, 6, 1])
+        with c_cen:
+            st.dataframe(
+                display_df,
+                use_container_width=True,
+                height=min(520, 80 + 38 * len(display_df)),
+                hide_index=True,
+                column_config={
+                    "Ticker": st.column_config.TextColumn("Ticker", width="small"),
+                    "Sinal": st.column_config.TextColumn("Sinal", width="small"),
+                    "Tipo": st.column_config.TextColumn("Tipo", width="small"),
+                    "Preço": st.column_config.NumberColumn("Preço", format="$%f", width="small"),
+                    "POI": st.column_config.TextColumn("POI", width="medium"),
+                    "POI Preço": st.column_config.NumberColumn("POI Preço", format="$%f", width="small"),
+                    "Zona": st.column_config.TextColumn("Zona", width="medium"),
+                    "SL": st.column_config.NumberColumn("SL", format="$%f", width="small"),
+                    "TP1": st.column_config.NumberColumn("TP1", format="$%f", width="small"),
+                    "RR": st.column_config.NumberColumn("RR", format="%.2f", width="small")
+                }
+            )
+            st.caption(
+                f"<div style='text-align: center'>Exibindo {len(display_df)} sinal(is) rigorosamente filtrados (RR > 3) | "
+                f"última varredura: "
+                f"{st.session_state.last_run.strftime('%d/%m/%Y %H:%M') if st.session_state.last_run else '—'}</div>",
+                unsafe_allow_html=True
+            )
 
         st.divider()
         st.markdown("### 📊 Gráfico Interativo")
