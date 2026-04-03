@@ -1,0 +1,358 @@
+ticker,empresa,setor
+ABCB4,ABC Brasil,Banking
+ABEV3,Ambev,Beverages
+ADPM3,Azevedo & Travassos,Construction
+AESB3,AES Brasil,Utilities
+AGRO3,AgroGalaxy,Agribusiness
+ALPA4,Alpargatas,Consumer
+ALPK3,Alpea,Steel
+ALSO3,Aliansa,Real Estate
+AMER3,Americanas,Retail
+ARZZ3,Arcos Dorados,Retail
+ASAI3,AsaSA,Real Estate
+ATMP3,Atma,Holdings
+AZUL4,Azul,Airlines
+B3SA3,B3,Bolsa
+BAHI3,Bahema,Educação
+BAL4,Ball,Packaging
+BBAS3,Banco do Brasil,Banking
+BBDC3,Banco Bradesco,Banking
+BBDC4,Banco Bradesco,Banking
+BBSE3,BB Seguridade,Insurance
+BEEF3,Minerva Foods,Food
+BHIA3,Grupo Hoteis,Hotels
+BIOM3,Biomedical,Healthcare
+BLAU3,Blau Farmacêutica,Healthcare
+BLUT3,Blue Tech,Technology
+BOBR4,Bob's,Retail
+BOVA11,iShares Ibovespa,ETF
+BPAC4,BPAC,Holdings
+BRAP3,Brasp,Oil
+BRAS3, Brasília,Real Estate
+BRBI4,BRB Bank,Banking
+BRCO3,Berco,Industrial
+BRDT3,BR Distribuidora,Distribution
+BRFS3,BRF Foods,Food
+BRKM5,Braskem,Chemicals
+BRML3,BR Malls,Real Estate
+BRPR3,BR Properties,Real Estate
+BRSR3,Bandeirantes,Banking
+BSLY3,Brasil Plural,Banking
+BTOW3,B2W Digital,Retail
+BVMF3,B3,Bolsa
+BZLI4,Bzlink,Technology
+CACC3,CCR,Roads
+CAFE3,Café E Coffee,Agribusiness
+CAMX3,Camx,Industrial
+CARD3,Credicard,Banking
+CASH3,Meliuz,Technology
+CBAV3,CBA,Veterans
+CBEE3,Ambipar,Environmental
+CCRO3,CCR,Roads
+CDA3,Above,Real Estate
+CDMU4,CEMIG,Utilities
+CELG3,Celg,Utilities
+CELP3,Cellwise,Technology
+CEMG4,CEMIG,Utilities
+CEMIG4,CEMIG,Utilities
+CEZA3,Cezar,Real Estate
+CGAS3,Comgás,Utilities
+CIEL3,Cielo,Payment
+CLSA3,Claro,Telecom
+CMIG4,CEMIG,Utilities
+CMIP3,Cimed,Pharma
+CNTO3,Contro,Real Estate
+COGN3,Cogna,Educação
+CRDE3,Cory,Industrial
+CRFB3,Carrefour Brasil,Retail
+CSAN3,Cosan,Agribusiness
+CSED3,CSE,Diversified
+CSMG3,CEMIG,Utilities
+CSNA3,CSN,Steel
+CTIP3,CETIP,Financial
+CVCB3,CVC Brasil,Travel
+CWBR3,CWB,Industrial
+CYRE3,Cyrela,Real Estate
+DASA3,Dasa,Healthcare
+DIRR3,D+ Holding,Diversified
+DOHM3, Dohm,Real Estate
+DOTZ3,Dotz,Technology
+DTLB3,DTEL,Telecom
+DUCON3,Ducal,Food
+DUOF3,Duo,Retail
+DVTT3,Divviv,Real Estate
+EALT4,Magazine Luiza,Retail
+ECOR3,Electrobras,Utilities
+EDGA3,Edeg,Real Estate
+EGIE3,Engie Brasil,Utilities
+ELCA3,Eletrobras,Utilities
+ELET3,Eletrobras,Utilities
+ELET6,Eletrobras,Utilities
+EMAE3,EMAE,Utilities
+EMBR3,Embraer,Aerospace
+ENAT3,Enauta,Oil
+ENBR3,Enel Brasil,Utilities
+ENER3,Energisa,Utilities
+ENGI3,Energisa,Utilities
+EPAR3,EPAR,Real Estate
+EQMA3,Equatorial,Utilities
+EQPA3,Equatorial,Utilities
+ESPA3,Espac,Real Estate
+EVEN3,Even,Real Estate
+EZTC3,EZTEC,Real Estate
+FAMB3,FAM,Real Estate
+FATC3,FAT,Real Estate
+FBMC3,Fibra,Real Estate
+FCXO3,FCR,Real Estate
+FDMO3,FDO,Real Estate
+FESA3,Fesa,Real Estate
+FHER3,Fher,Industrial
+FIQE3,Fiqe,Real Estate
+FLMA3,Felmont,Real Estate
+FNAM3,FNAM,Real Estate
+FNAR3,FNAR,Real Estate
+FOCO3,Foco,Real Estate
+FRAS3,Fras-le,Auto
+FRIO3,Frimm,Real Estate
+FSLG3,FSLG,Holdings
+FTCP3,FTCP,Industrial
+GEPA3,Gep,Industrial
+GGBR3,Gerdau,Steel
+GGBR4,Gerdau,Steel
+GILT3,Gilt,Real Estate
+GLOB3,Globo,Media
+GMAT3,Magazine Luiza,Retail
+GNDI3,Notre Dame,Healthcare
+GOLG3,Gol,Airlines
+GOLL4,Gol,Airlines
+GPAR3,GPAR,Real Estate
+GPCP3,Grupo Pão de Açúcar,Retail
+GRND3,Grendene,Shoes
+GSHP3,General Shopping,Real Estate
+GUAR3,Guarani,Agribusiness
+HAGA3,Haga,Industrial
+HBOR3,HBR Realty,Real Estate
+HBRE3,HBR,Real Estate
+HETA3,Heta,Real Estate
+HOJE3,Hoje,Real Estate
+HYPE3,Hypera Pharma,Pharma
+IBSA3,IBSA,Real Estate
+IBXX3,IBXX,Real Estate
+IGBR3,IGB,Real Estate
+IGTA3,Igata,Real Estate
+IMCH3,IMC,Food
+INBR3,Inbrasc,Banking
+INEP3,Ine,Real Estate
+IRBR3,Irb,Real Estate
+ITSA3,Itaúsa,Holdings
+ITUB3,Itaú,Banking
+ITUB4,Itaú,Banking
+JBSS3,JBS,Food
+JCDC3,JCDC,Real Estate
+JEJP3,JEJP,Real Estate
+JHSF3,JHSF,Real Estate
+JOPA3,JOPA,Real Estate
+JPM3,JPM,Real Estate
+KDIR3,KDIR,Real Estate
+KEPL3,Kepler,Real Estate
+KLBN4,Klabin,Paper
+KMLI3,KMP,Real Estate
+LACE3,Lacer,Real Estate
+LAVV3, Lavvi,Real Estate
+LBND3,LBND,Real Estate
+LEVE3,Leve,Real Estate
+LGLG3,LGLG,Real Estate
+LIMA3,Lima,Real Estate
+LINX3,Linx,Technology
+LIPB3,LIP,Real Estate
+LOGG3,Log Commercial,Real Estate
+LONG3,Long,Real Estate
+LREN3,Lojas Renner,Retail
+LUXS3,Lux Share,Real Estate
+LWSA3,LWSA,Technology
+MATD3,MATD,Real Estate
+MBLY3,Mobly,Retail
+MDNE3,MDN,Real Estate
+MEPG3,MEPG,Real Estate
+METAL3,Metal,Steel
+MGLU3,Magazine Luiza,Retail
+MILS3,Mills,Construction
+MLAS3,MLAS,Real Estate
+MMXM3,MMX,Steel
+MNDL3,MNDL,Real Estate
+MNSR3,Minup,Retail
+MOAR3,MOAR,Real Estate
+MODL3,Modalmais,Banking
+MPLU3,Multiplan,Real Estate
+MRFG3,MRFG,Food
+MRGE3,MRGE,Real Estate
+MRSA3,MRSA,Real Estate
+MRVE3,MRV,Real Estate
+MTIG3,MTIG,Real Estate
+MTRE3,MTRE,Real Estate
+MULT3,Multiplan,Real Estate
+MULT4,Multiplan,Real Estate
+MVIS3,Mvis,Real Estate
+MWET3,MWET,Real Estate
+MYPK3,IRB Brasil,Insurance
+NATU3,Natura,Consumer
+NEOG3,NEOG,Real Estate
+NEON3,Neon,Technology
+NEPG3,NEPG,Real Estate
+NORD3,NORD,Real Estate
+NTCO3,Natura,Consumer
+NUTR3,Nutric,Food
+NVDX3,NVDX,Real Estate
+ODER3,ODER,Real Estate
+OGXP3,OGX,Oil
+OIBR3,Oi,Telecom
+OIBR4,Oi,Telecom
+OMGE3,OMGE,Construction
+OPCT3,OPCT,Real Estate
+ORLY3,Orly,Real Estate
+OSX3,OSX,Oil
+PAGS3,PagSeguro,Payment
+PAPA3,PAPA,Real Estate
+PCAR3,Pão de Açúcar,Retail
+PDGR3,PDG,Real Estate
+PEPB3,PEPB,Real Estate
+PETR3,Petrobras,Oil
+PETR4,Petrobras,Oil
+PETZ3,Petz,Retail
+PFRM3,Profarma,Pharma
+PINE3,Pine,Banking
+PLAS3,Plasc,Industrial
+PLPA3,PLPA,Real Estate
+PMAM3,Paraná Clínicas,Healthcare
+PNB3,P NB,Real Estate
+POMO3,Pomifruti,Food
+POSI3,Positivo,Technology
+POTI3,Poti,Real Estate
+POWE3,Power,Utilities
+PRIO3,Prio,Oil
+PSSA3,Porto Seguro,Insurance
+PTBL3,Portobello,Ceramics
+PTNT3,PTNT,Real Estate
+QUAL3,Qualicorp,Insurance
+RADL3,Rialto,Retail
+RAIL3,Rail,Logistics
+RAIZ3,Raízen,Agribusiness
+RAME3,R AME,Real Estate
+RANI3,Raizen,Agribusiness
+RAPT3,RAPT,Real Estate
+RASP3,RASP,Real Estate
+RDCD3,RD,Real Estate
+RDEV3,RDEV,Real Estate
+RDNI3,Rdni,Real Estate
+REAL3,Real,Real Estate
+REDE3,Rede,Real Estate
+REVR3,REVR,Real Estate
+RFRM3,RFRM,Real Estate
+RIVR3,Riviera,Real Estate
+RNDP3,RNDP,Real Estate
+ROMA3,Roma,Real Estate
+ROMI3,Romi,Industrial
+ROND3,ROND,Real Estate
+ROOX3,Rooftop,Real Estate
+RQTP3,RQTP,Real Estate
+RRIO3,Rio,Real Estate
+RRRP3,RRRP,Real Estate
+RSID3,RSID,Real Estate
+SANB3,Santander,Banking
+SANB4,Santander,Banking
+SAPR3,Sapru,Real Estate
+SAPR4,Sapru,Real Estate
+SBSP3,Sabesp,Utilities
+SCAR3,SCAR,Real Estate
+SEER3,Ser,Real Estate
+SEQL3,Sequoia,Real Estate
+SHBR3,SHBR,Real Estate
+SHHP3,Shhp,Real Estate
+SHOW3,Show,Real Estate
+SHUL3,Shul,Real Estate
+SLCE3,SLC,Agribusiness
+SLED3,SLED,Real Estate
+SMLE3,Smiles,Travel
+SMPB3,SMPB,Real Estate
+SOND3,Sond,Real Estate
+SPRI3,Spri,Real Estate
+SQIA3,Sinqia,Technology
+STBP3,Santob,Real Estate
+STCB3,Stark,Real Estate
+STEK3,Stee,Real Estate
+STJD3,Stj,Real Estate
+STKF3,STKF,Real Estate
+STLB3,Starl,Real Estate
+STNC3,Stnc,Real Estate
+SUGB3,SUG,Real Estate
+SUPR3,Supr,Real Estate
+SYNE3,Sync,Real Estate
+TAEE3,TAESA,Utilities
+TASA3,Taurus,Defense
+TCNO3,TCN,Logistics
+TCSA3,TCS,Real Estate
+TECN3,Tecnisa,Real Estate
+TEND3,Tenda,Real Estate
+TERN3,Tern,Real Estate
+TGMA3,TGMA,Real Estate
+TGTY3,TGTY,Real Estate
+TIMP3,Tim,Telecom
+TIMS3,Tim,Telecom
+TKNP3,TKN,Real Estate
+TLPP3,TLP,Real Estate
+TOTS3,Totvs,Technology
+TPIS3,TPI,Real Estate
+TRIS3,Tris,Real Estate
+TRPL3,TRPL,Real Estate
+TRPV3,TRPV,Real Estate
+TSLY3,Tsly,Real Estate
+TTEN3,TTEN,Real Estate
+TUPY3,Tupy,Industrial
+TURB3,TURB,Real Estate
+TWST3,Twist,Retail
+UCAS3,Ucash,Technology
+UGPA3,Ultrapar,Distribution
+UHLG3,UHLG,Real Estate
+UNIP3,Unip,Insurance
+UNIT3,Unit,Telecom
+UNVR3,Univ,Real Estate
+URPN3,URPN,Real Estate
+USIM3,Usiminas,Steel
+USIM5,Usiminas,Steel
+UTXP3,UTXP,Real Estate
+VAGR3,Votorantim Agricola,Agribusiness
+VALE3,Vale,Mining
+VALG3,Vale,Real Estate
+VAMO3,VAMO,Real Estate
+VASO3,Vaso,Real Estate
+VBBR3,Verbena,Real Estate
+VCPA3,VCPA,Real Estate
+VDEN3,VDEN,Real Estate
+VERX3,VERX,Real Estate
+VHSI3,VHSI,Real Estate
+VIAL3,VIA,Real Estate
+VIBRA3,Vibra,Distribution
+VISA3,Visa,Real Estate
+VIVA3,Viva,Real Estate
+VIVR3,VIVR,Real Estate
+VLTO3,Valt,Real Estate
+VMSB3,VMSB,Real Estate
+VNDM3,VNDM,Real Estate
+VOLT3,Volt,Real Estate
+VPSC3,VPSC,Real Estate
+VSHS3,VSHS,Real Estate
+VTLT3,VTLT,Real Estate
+VUNA3,Vulcan,Industrial
+VVEO3,VVEO,Healthcare
+WALM3,Walm,Real Estate
+WATT3,Watt,Real Estate
+WEGN3,WEG,Industrial
+WEGE3,WEG,Industrial
+WIZS3,Wiz Sol,Financial
+WLDG3,Wild,Real Estate
+WLMS3,WLMS,Real Estate
+WMRI3,WMRI,Real Estate
+WNSR3,WNSR,Real Estate
+XPLG3,Xplan,Real Estate
+YDUQ3,Yduqs,Educação
+ZAMP3,Zamp,Retail
