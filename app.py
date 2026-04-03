@@ -25,15 +25,18 @@ st.set_page_config(
 )
 
 COLORS = {
-    'bull': '#00C805',
-    'bear': '#FF4B4B',
-    'neutral': '#888888',
-    'sweep': '#FFD700',
+    'bull': '#2ECC71',
+    'bear': '#E74C3C',
+    'neutral': '#7F8C8D',
+    'sweep': '#F39C12',
     'ob': '#9B59B6',
     'fvg': '#3498DB',
     'fib': '#E67E22',
-    'background': '#0E1117',
-    'card_bg': '#1E1E1E'
+    'background': '#1A1A2E',
+    'card_bg': '#16213E',
+    'accent': '#4A90D9',
+    'text': '#ECEFF4',
+    'text_muted': '#A0A0A0'
 }
 
 
@@ -46,8 +49,8 @@ def download_data_batch(tickers: list, period: str = '2y', interval: str = '1d',
             df = yf.download(ticker, period=period, interval=interval, progress=False)
             if df.empty:
                 return ticker, None
-            df = df[COLUMNS]
-            df.columns = COLUMNS
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
             return ticker, df
         except:
             return ticker, None
@@ -406,10 +409,16 @@ def get_latest_signals(df: pd.DataFrame, lookback: int = 5) -> pd.DataFrame:
     return signals
 
 
-def run_screener(tickers_file: str = 'tickers_b3.csv', min_rr: float = 1.5) -> pd.DataFrame:
+def run_screener(tickers_file: str = 'tickers_b3.csv', min_rr: float = 1.0) -> pd.DataFrame:
     """Run the complete screener on all tickers."""
     tickers_df = pd.read_csv(tickers_file)
-    tickers = [f"{t}.SA" for t in tickers_df['ticker'].tolist()]
+    
+    def get_yf_ticker(ticker, tipo):
+        if tipo == 'BDR':
+            return ticker
+        return f"{ticker}.SA"
+    
+    tickers = [get_yf_ticker(t, row['tipo']) for t, row in tickers_df.iterrows()]
     
     data = download_data_batch(tickers)
     
@@ -425,18 +434,19 @@ def run_screener(tickers_file: str = 'tickers_b3.csv', min_rr: float = 1.5) -> p
             
             if not signals.empty:
                 latest = signals.iloc[-1]
-                if pd.notna(latest['signal']) and latest.get('rr_ratio', 0) >= min_rr:
-                    ticker_clean = ticker.replace('.SA', '')
-                    all_signals.append({
-                        'ticker': ticker_clean,
-                        'signal': latest['signal'],
-                        'signal_type': latest['signal_type'],
-                        'price': df_result.iloc[-1]['Close'],
-                        'poi_type': latest.get('poi_type'),
-                        'poi_price': latest.get('poi_price'),
-                        'zone': latest.get('zone'),
-                        'sl': latest.get('sl_price'),
-                        'tp1': latest.get('tp1_price'),
+                if pd.notna(latest['signal']):
+                    if latest.get('rr_ratio', 0) >= min_rr or latest['signal_type'] == 'CHOCH':
+                        ticker_clean = ticker.replace('.SA', '')
+                        all_signals.append({
+                            'ticker': ticker_clean,
+                            'signal': latest['signal'],
+                            'signal_type': latest['signal_type'],
+                            'price': df_result.iloc[-1]['Close'],
+                            'poi_type': latest.get('poi_type'),
+                            'poi_price': latest.get('poi_price'),
+                            'zone': latest.get('zone'),
+                            'sl': latest.get('sl_price'),
+                            'tp1': latest.get('tp1_price'),
                         'rr': latest.get('rr_ratio'),
                         'mtf_note': latest.get('mtf_note')
                     })
@@ -551,44 +561,45 @@ def landing_page():
         margin-bottom: 0.5rem;
     }
     .hero-subtitle {
-        font-size: 1.5rem;
-        color: #888;
-        margin-bottom: 2rem;
+        font-size: 1.3rem;
+        color: #A0A0A0;
+        margin-bottom: 1.5rem;
     }
     .feature-card {
-        background: linear-gradient(145deg, #1E1E1E, #252525);
-        border-radius: 15px;
-        padding: 20px;
-        margin: 10px 0;
-        border: 1px solid #333;
+        background: linear-gradient(145deg, #16213E, #1A1A2E);
+        border-radius: 12px;
+        padding: 16px;
+        margin: 8px 0;
+        border: 1px solid #2D3A4F;
+        min-height: 100px;
     }
     .stat-card {
-        background: linear-gradient(145deg, #1a1a2e, #16213e);
-        border-radius: 12px;
-        padding: 20px;
+        background: linear-gradient(145deg, #1A1A2E, #16213E);
+        border-radius: 10px;
+        padding: 16px;
         text-align: center;
-        border: 1px solid #00C805;
+        border: 1px solid #2D3A4F;
     }
     .stat-number {
-        font-size: 2.5rem;
+        font-size: 1.8rem;
         font-weight: bold;
-        color: #00C805;
+        color: #4A90D9;
     }
     .stat-label {
-        color: #888;
-        font-size: 0.9rem;
+        color: #A0A0A0;
+        font-size: 0.8rem;
     }
     .divider {
         height: 1px;
-        background: linear-gradient(90deg, transparent, #00C805, transparent);
-        margin: 2rem 0;
+        background: linear-gradient(90deg, transparent, #4A90D9, transparent);
+        margin: 1.5rem 0;
     }
     .mtf-note {
-        background: #1a1a2e;
-        border-left: 4px solid #FFD700;
-        padding: 15px;
-        border-radius: 0 10px 10px 0;
-        margin: 10px 0;
+        background: #16213E;
+        border-left: 4px solid #F39C12;
+        padding: 12px;
+        border-radius: 0 8px 8px 0;
+        margin: 8px 0;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -598,8 +609,8 @@ def landing_page():
     with col1:
         st.markdown('<p class="hero-title">📈 SMC Cloud Screener v3.0</p>', unsafe_allow_html=True)
         st.markdown('''<p class="hero-subtitle">Screener Institucional para Ações da B3</p>
-        <p style="color: #666; font-size: 0.9rem;">
-            Varredura diária de 200+ ativos com lógica SMC (Smart Money Concepts)<br>
+        <p style="color: #7F8C8D; font-size: 0.85rem;">
+            Varredura diária de 280+ ativos com lógica SMC (Smart Money Concepts)<br>
             Baseado em ICT/SMC 2025-2026 com validação rigorosa de liquidez
         </p>''', unsafe_allow_html=True)
     
@@ -619,7 +630,7 @@ def landing_page():
         st.markdown(f"""
         <div class="feature-card">
             <h4 style="color: {COLORS['sweep']};">💧 Liquidity Sweeps</h4>
-            <p style="color: #888; font-size: 0.85rem;">Detecção de varreduras de liquidez (sweeps) que validam topos e fundos fortes</p>
+            <p style="color: #A0A0A0; font-size: 0.8rem;">Detecção de varreduras de liquidez (sweeps) que validam topos e fundos fortes</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -627,7 +638,7 @@ def landing_page():
         st.markdown(f"""
         <div class="feature-card">
             <h4 style="color: {COLORS['bull']};">🎯 BOS/CHOCH</h4>
-            <p style="color: #888; font-size: 0.85rem;">Identificação de quebras de estrutura com validação de close de corpo</p>
+            <p style="color: #A0A0A0; font-size: 0.8rem;">Identificação de quebras de estrutura com validação de close de corpo</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -635,7 +646,7 @@ def landing_page():
         st.markdown(f"""
         <div class="feature-card">
             <h4 style="color: {COLORS['fib']};">📊 Fibonacci</h4>
-            <p style="color: #888; font-size: 0.85rem;">Zonas de Discount (compra) e Premium (venda) com níveis 50%</p>
+            <p style="color: #A0A0A0; font-size: 0.8rem;">Zonas de Discount (compra) e Premium (venda) com níveis 50%</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -643,31 +654,39 @@ def landing_page():
         st.markdown(f"""
         <div class="feature-card">
             <h4 style="color: {COLORS['ob']};">🧱 Order Blocks + FVG</h4>
-            <p style="color: #888; font-size: 0.85rem;">Blocos de ordem e Fair Value Gaps como POIs de alta confluência</p>
+            <p style="color: #A0A0A0; font-size: 0.8rem;">Blocos de ordem e Fair Value Gaps como POIs de alta confluência</p>
         </div>
         """, unsafe_allow_html=True)
     
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown(f"""
         <div class="stat-card">
-            <div class="stat-number">200+</div>
-            <div class="stat-label">Ativos Scaneados</div>
+            <div class="stat-number">280+</div>
+            <div class="stat-label">Ações B3</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown(f"""
         <div class="stat-card">
-            <div class="stat-number">D1</div>
-            <div class="stat-label">Timeframe Principal</div>
+            <div class="stat-number">45+</div>
+            <div class="stat-label">BDRs</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col3:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-number">D1</div>
+            <div class="stat-label">Timeframe</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
         st.markdown(f"""
         <div class="stat-card">
             <div class="stat-number">1:3</div>
