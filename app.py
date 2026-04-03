@@ -571,6 +571,17 @@ def landing_page():
         padding: 14px;
         margin: 6px 0;
         border: 1px solid #2D3A4F;
+        height: 110px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .feature-card h4 {
+        margin: 0 0 6px 0;
+    }
+    .feature-card p {
+        margin: 0;
+        line-height: 1.3;
     }
     .stat-card {
         background: linear-gradient(145deg, #1A1A2E, #16213E);
