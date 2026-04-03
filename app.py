@@ -382,16 +382,18 @@ def get_latest_signals(df: pd.DataFrame, lookback: int = 5) -> pd.DataFrame:
     return signals
 
 
-def run_screener(tickers_file: str = 'tickers_b3.csv', min_rr: float = 1.0) -> pd.DataFrame:
+def run_screener(tickers_file: str = 'tickers_b3.csv', min_rr: float = 0.5) -> pd.DataFrame:
     """Run the complete screener on all tickers."""
     tickers_df = pd.read_csv(tickers_file)
     
-    def get_yf_ticker(ticker, tipo):
+    def get_yf_ticker(row):
+        ticker = row['ticker']
+        tipo = row['tipo']
         if tipo == 'BDR':
             return ticker
         return f"{ticker}.SA"
     
-    tickers = [get_yf_ticker(t, row['tipo']) for t, row in tickers_df.iterrows()]
+    tickers = [get_yf_ticker(row) for idx, row in tickers_df.iterrows()]
     
     data = download_data_batch(tickers)
     
@@ -408,22 +410,21 @@ def run_screener(tickers_file: str = 'tickers_b3.csv', min_rr: float = 1.0) -> p
             if not signals.empty:
                 latest = signals.iloc[-1]
                 if pd.notna(latest['signal']):
-                    if latest.get('rr_ratio', 0) >= min_rr or latest['signal_type'] == 'CHOCH':
-                        ticker_clean = ticker.replace('.SA', '')
-                        all_signals.append({
-                            'ticker': ticker_clean,
-                            'signal': latest['signal'],
-                            'signal_type': latest['signal_type'],
-                            'price': df_result.iloc[-1]['Close'],
-                            'poi_type': latest.get('poi_type'),
-                            'poi_price': latest.get('poi_price'),
-                            'zone': latest.get('zone'),
-                            'sl': latest.get('sl_price'),
-                            'tp1': latest.get('tp1_price'),
+                    ticker_clean = ticker.replace('.SA', '')
+                    all_signals.append({
+                        'ticker': ticker_clean,
+                        'signal': latest['signal'],
+                        'signal_type': latest['signal_type'],
+                        'price': df_result.iloc[-1]['Close'],
+                        'poi_type': latest.get('poi_type'),
+                        'poi_price': latest.get('poi_price'),
+                        'zone': latest.get('zone'),
+                        'sl': latest.get('sl_price'),
+                        'tp1': latest.get('tp1_price'),
                         'rr': latest.get('rr_ratio'),
                         'mtf_note': latest.get('mtf_note')
                     })
-        except:
+        except Exception as e:
             continue
     
     if all_signals:
