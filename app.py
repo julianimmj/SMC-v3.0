@@ -50,7 +50,7 @@ html, body, [class*="css"] {
     color: var(--t1);
 }
 .block-container {
-    padding: 0 !important;
+    padding-top: 0 !important;
     max-width: 100% !important;
 }
 header[data-testid="stHeader"] { display: none !important; }
@@ -328,12 +328,13 @@ def landing_page():
     </div>
     """, unsafe_allow_html=True)
 
-    # 2 ── Hero: 2 colunas Streamlit nativas (botão fica alinhado com o título)
-    col_left, col_right = st.columns([1.15, 1], gap="large")
+    # 2 ── Hero: 2 colunas Streamlit nativas (botão alinhado com o título)
+    col_left, col_right = st.columns([1.1, 1], gap="large")
 
     with col_left:
+        # Título e descrição em HTML puro — sem padding-left manual
         st.markdown("""
-        <div style="padding: 48px 0 32px 52px;">
+        <div style="padding: 40px 0 20px 0;">
           <div class="eyebrow">⚡ Smart Money Concepts · Institucional</div>
           <div class="h1">Screener SMC<br><span class="g">para a B3</span></div>
           <span class="ver">v3.0 &nbsp;·&nbsp; Yahoo Finance &nbsp;·&nbsp; Timeframe D1</span>
@@ -349,16 +350,15 @@ def landing_page():
           </div>
         </div>
         """, unsafe_allow_html=True)
-        # Botão alinhado com o título, dentro da mesma coluna
-        st.markdown('<div style="padding: 0 0 40px 52px;">', unsafe_allow_html=True)
+        # Botão na mesma coluna — naturalmente alinhado com o título acima
         if st.button("🚀  Iniciar Screener Agora", key="btn_start"):
             st.session_state.page = 'screener'
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:32px;"></div>', unsafe_allow_html=True)
 
     with col_right:
         st.markdown("""
-        <div style="padding: 48px 52px 32px 16px;">
+        <div style="padding: 40px 0 20px 24px;">
           <div class="panel">
             <div class="pbar">
               <span class="ptitle">📊 Sinais Ativos — D1</span>
@@ -379,15 +379,15 @@ def landing_page():
         """, unsafe_allow_html=True)
 
     # ── Stats bar compacta ────────────────────────────────────────────────────────
-    _pad, col_s1, col_s2, col_s3, col_s4, _pad2 = st.columns([0.45, 1, 1, 1, 1, 0.45])
+    col_s1, col_s2, col_s3, col_s4 = st.columns(4)
     with col_s1:
-        st.markdown('<div style="text-align:center;padding:10px 0;"><span class="snum" style="font-size:1.55rem;">200+</span><div class="slbl">Ativos</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">200+</span><div class="slbl">Ativos</div></div>', unsafe_allow_html=True)
     with col_s2:
-        st.markdown('<div style="text-align:center;padding:10px 0;"><span class="snum" style="font-size:1.55rem;">D1</span><div class="slbl">Timeframe</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">D1</span><div class="slbl">Timeframe</div></div>', unsafe_allow_html=True)
     with col_s3:
-        st.markdown('<div style="text-align:center;padding:10px 0;"><span class="snum" style="font-size:1.55rem;">6</span><div class="slbl">Validações</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">6</span><div class="slbl">Validações</div></div>', unsafe_allow_html=True)
     with col_s4:
-        st.markdown('<div style="text-align:center;padding:10px 0;"><span class="snum" style="font-size:1.55rem;">0%</span><div class="slbl">Fake BOS</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">0%</span><div class="slbl">Fake BOS</div></div>', unsafe_allow_html=True)
 
     st.markdown('<div style="height:2px;background:linear-gradient(90deg,transparent,rgba(79,142,247,0.2),transparent);margin:0 0 4px;"></div>', unsafe_allow_html=True)
 
