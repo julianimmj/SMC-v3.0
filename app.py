@@ -394,6 +394,54 @@ if 'filter_zone' not in st.session_state:
 # ─── Landing Page ────────────────────────────────────────────────────────────────
 def landing_page():
 
+    with st.sidebar:
+        st.markdown("<div style='font-size:0.8rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Cadastrar Alerta 📩</div>", unsafe_allow_html=True)
+        st.caption("Receba os sinais diários de alta probabilidade do SMC diretamente na sua caixa de entrada, varridos na nuvem às 03:00.")
+        with st.form("form_email"):
+            email_input = st.text_input("Seu endereço de E-mail", placeholder="seu.email@gmail.com")
+            submitted = st.form_submit_button("Inscrever-se", use_container_width=True)
+            if submitted and email_input:
+                try:
+                    import json
+                    import os
+                    email_added = False
+                    
+                    # 1. Tentativa via Github API (Streamlit Secrets)
+                    try:
+                        from github import Github
+                        gh_token = st.secrets["GITHUB_TOKEN"]
+                        g = Github(gh_token)
+                        repo = g.get_repo("julianimmj/SMC-v3.0")
+                        contents = repo.get_contents("emails.json", ref="main")
+                        data_gh = json.loads(contents.decoded_content.decode())
+                        
+                        if email_input not in data_gh.get("emails", []):
+                            data_gh.setdefault("emails", []).append(email_input)
+                            repo.update_file(contents.path, f"subs: add {email_input}", json.dumps(data_gh, indent=2), contents.sha, branch="main")
+                            email_added = True
+                        else:
+                            st.info("E-mail já está na lista.")
+                    except Exception as gh_err:
+                        # 2. Fallback local / dev
+                        with open("emails.json", "r") as f:
+                            data = json.load(f)
+                        
+                        if email_input not in data.get("emails", []):
+                            data.setdefault("emails", []).append(email_input)
+                            with open("emails.json", "w") as f:
+                                json.dump(data, f)
+                            email_added = True
+                        else:
+                            if not email_added: # if it didn't just fail silently above
+                                st.info("E-mail já está na lista.")
+
+                    if email_added:
+                        st.success("✅ E-mail cadastrado com sucesso!")
+                        
+                except Exception as e:
+                    st.error(f"Erro interno ao cadastrar: {e}")
+        st.divider()
+
     # 1 ── Navbar ─────────────────────────────────────────────────────────────────
     st.markdown("""
     <div class="nav">
@@ -428,15 +476,25 @@ def landing_page():
           </div>
         </div>
         """, unsafe_allow_html=True)
-        # Botão na mesma coluna — naturalmente alinhado com o título acima
-        if st.button("🚀  Iniciar Screener Agora", key="btn_start"):
-            st.session_state.signals_df = None   # sempre força novo scan
-            st.session_state.active_tab = 'all'
-            st.session_state.page = 'screener'
-            st.rerun()
+        # Botoes
+        bcol1, bcol2 = st.columns(2)
+        with bcol1:
+            if st.button("🚀  Realizar Novo Screener", key="btn_start", use_container_width=True):
+                st.session_state.signals_df = None   # sempre força novo scan 
+                st.session_state.active_tab = 'all'
+                st.session_state.page = 'screener'
+                st.rerun()
+        with bcol2:
+            if st.button("⏱️ Ver Último Resultado", key="btn_quick", use_container_width=True):
+                try:
+                    df_saved = pd.read_csv("latest_scan.csv")
+                    st.session_state.signals_df = df_saved
+                except:
+                    st.session_state.signals_df = None
+                st.session_state.active_tab = 'all'
+                st.session_state.page = 'screener'
+                st.rerun()
         st.markdown('<div style="height:32px;"></div>', unsafe_allow_html=True)
-
-    with col_right:
         st.markdown("""
         <div style="padding: 40px 0 20px 24px;">
           <div class="panel">
