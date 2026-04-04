@@ -288,32 +288,7 @@ div[data-testid="metric-container"] {
     background: var(--glass) !important; border: 1px solid var(--border) !important;
     border-radius: 12px !important; padding: 16px !important;
 }
-.metric-btn > button {
-    background: var(--glass) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 12px !important;
-    padding: 18px 10px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: auto !important;
-    width: 100% !important;
-}
-.metric-btn > button:hover {
-    border-color: var(--accent) !important;
-    background: rgba(79,142,247,0.06) !important;
-    transform: translateY(-2px) !important;
-}
-.metric-btn > button p {
-    font-size: 1.4rem !important; 
-    font-weight: 800 !important;
-    margin: 0 !important;
-    color: var(--t1) !important;
-}
-.metric-btn > button div:first-child {
-    font-size: 0.95rem !important;
-}
+/* ══ CTA principal ══ */
 .stButton > button {
     background: linear-gradient(130deg, var(--accent), var(--accent2)) !important;
     color: #fff !important; border: none !important; border-radius: 10px !important;
@@ -322,6 +297,79 @@ div[data-testid="metric-container"] {
     width: 100% !important;
 }
 .stButton > button:hover { opacity: 0.86 !important; transform: translateY(-1px) !important; }
+
+/* ══ Sidebar nav buttons ══ */
+.btn-nav [data-testid="stButton"] button {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--t1) !important; border-radius: 10px !important;
+    font-weight: 600 !important; font-size: 0.88rem !important;
+    padding: 10px 14px !important;
+    transition: background 0.18s, border-color 0.18s !important;
+    background-image: none !important; box-shadow: none !important;
+}
+.btn-nav [data-testid="stButton"] button:hover {
+    opacity: 1 !important; background: rgba(79,142,247,0.1) !important;
+    border-color: rgba(79,142,247,0.35) !important; transform: none !important;
+}
+
+/* ══ Back button (topo da página) ══ */
+.btn-back [data-testid="stButton"] button {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--t2) !important; border-radius: 8px !important;
+    font-size: 0.8rem !important; padding: 7px 14px !important;
+    width: auto !important; font-weight: 600 !important;
+    background-image: none !important; box-shadow: none !important;
+}
+.btn-back [data-testid="stButton"] button:hover {
+    opacity: 1 !important; border-color: var(--accent) !important;
+    color: var(--accent) !important; transform: none !important;
+}
+
+/* ══ Filter tabs — base ══ */
+.filter-tab [data-testid="stButton"] button {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: var(--t2) !important; border-radius: 10px !important;
+    font-weight: 600 !important; font-size: 0.8rem !important;
+    padding: 10px 6px !important;
+    transition: all 0.18s !important;
+    background-image: none !important; box-shadow: none !important;
+}
+.filter-tab [data-testid="stButton"] button:hover {
+    opacity: 1 !important;
+    background: rgba(255,255,255,0.07) !important;
+    border-color: rgba(255,255,255,0.18) !important;
+    color: var(--t1) !important; transform: none !important;
+}
+/* Ativas */
+.filter-tab.ft-all.active [data-testid="stButton"] button {
+    background: rgba(79,142,247,0.16) !important;
+    border-color: rgba(79,142,247,0.55) !important;
+    color: var(--accent) !important; font-weight: 800 !important;
+}
+.filter-tab.ft-bull.active [data-testid="stButton"] button {
+    background: rgba(16,217,160,0.13) !important;
+    border-color: rgba(16,217,160,0.5) !important;
+    color: var(--green) !important; font-weight: 800 !important;
+}
+.filter-tab.ft-bear.active [data-testid="stButton"] button {
+    background: rgba(244,67,108,0.13) !important;
+    border-color: rgba(244,67,108,0.5) !important;
+    color: var(--red) !important; font-weight: 800 !important;
+}
+.filter-tab.ft-bos.active [data-testid="stButton"] button {
+    background: rgba(79,142,247,0.13) !important;
+    border-color: rgba(79,142,247,0.45) !important;
+    color: var(--accent) !important; font-weight: 800 !important;
+}
+.filter-tab.ft-choch.active [data-testid="stButton"] button {
+    background: rgba(167,139,250,0.13) !important;
+    border-color: rgba(167,139,250,0.45) !important;
+    color: var(--purple) !important; font-weight: 800 !important;
+}
+
 section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #07071a, #0c0c24) !important;
     border-right: 1px solid var(--border) !important;
@@ -337,6 +385,10 @@ if 'signals_df' not in st.session_state:
     st.session_state.signals_df = None
 if 'last_run' not in st.session_state:
     st.session_state.last_run = None
+if 'active_tab' not in st.session_state:
+    st.session_state.active_tab = 'all'
+if 'filter_zone' not in st.session_state:
+    st.session_state.filter_zone = 'Todas'
 
 
 # ─── Landing Page ────────────────────────────────────────────────────────────────
@@ -606,49 +658,87 @@ def build_chart(df: pd.DataFrame, ticker: str, trade_info: dict = None) -> go.Fi
 
 # ─── Screener Page ───────────────────────────────────────────────────────────────
 def screener_page():
+
+    # ─── SIDEBAR ──────────────────────────────────────────────────────────────────
     with st.sidebar:
-        st.markdown("### ⚙️ SMC Screener v3.0")
-        st.divider()
-        if st.button("🏠 Voltar à Landing Page", key="btn_home"):
-            st.session_state.page = 'landing'
-            st.rerun()
-        st.markdown("#### 🔍 Filtros")
-        filter_type = st.selectbox("Tipo de Sinal", ["Todos", "BOS", "CHOCH"], key="filter_type")
-        filter_dir  = st.selectbox("Direção", ["Todas", "Alta (Bull)", "Baixa (Bear)"], key="filter_dir")
-        filter_zone = st.selectbox("Zona Fibonacci",
-                                   ["Todas", "Discount", "Premium", "Reversal"], key="filter_zone")
-        st.divider()
-        st.markdown("#### 📋 MTF Nota de Execução")
         st.markdown("""
-        <div class="mtf-note">
-        1. Aguarde o preço chegar ao POI no D1<br>
-        2. Mude para LTF (15min / 1min)<br>
-        3. Espere CHOCH interno no LTF<br>
-        4. Entre quando fluxo LTF alinhar com D1<br>
-        5. SL: abaixo / acima do strong level<br>
-        6. TP: próximo weak high / low oposto
+        <div style="padding:4px 0 12px;">
+            <div style="font-size:1rem;font-weight:800;color:var(--t1);letter-spacing:-0.2px;">
+                📈 SMC <span style="background:linear-gradient(90deg,var(--accent),var(--purple));
+                -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                background-clip:text;">Screener</span>
+            </div>
+            <div style="font-size:0.68rem;color:var(--t3);margin-top:3px;">v3.0 · B3 · ICT/SMC 2025-2026</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.divider()
+
+        st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Navegação</div>", unsafe_allow_html=True)
+        st.markdown('<div class="btn-nav">', unsafe_allow_html=True)
+        if st.button("🏠  Página Inicial", key="btn_home", use_container_width=True):
+            st.session_state.page = 'landing'
+            st.session_state.active_tab = 'all'
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="btn-nav">', unsafe_allow_html=True)
+        if st.button("🔄  Novo Scan", key="btn_rescan", use_container_width=True):
+            st.session_state.signals_df = None
+            st.session_state.active_tab = 'all'
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.divider()
+        st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Zona Fibonacci</div>", unsafe_allow_html=True)
+        st.selectbox("", ["Todas", "Discount", "Premium", "Reversal"],
+                     key="filter_zone", label_visibility="collapsed")
+
+        st.divider()
+        st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>📋 Execução MTF</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div class="mtf-note" style="font-size:0.77rem;">
+        1️⃣ Aguarde preço no POI (D1)<br>
+        2️⃣ Mude para LTF 15min/1min<br>
+        3️⃣ Espere CHOCH interno no LTF<br>
+        4️⃣ Entre com fluxo D1 alinhado<br>
+        5️⃣ SL: strong level protegido<br>
+        6️⃣ TP: weak high/low oposto
         </div>
         """, unsafe_allow_html=True)
         st.divider()
         if st.session_state.last_run:
-            st.caption(f"🕐 {st.session_state.last_run.strftime('%d/%m %H:%M')}")
-        if st.button("🔄 Novo Scan", key="btn_rescan"):
-            st.session_state.signals_df = None
+            st.caption(f"🕐 Última varredura: {st.session_state.last_run.strftime('%d/%m/%Y às %H:%M')}")
+        else:
+            st.caption("Sem varredura recente")
 
-    st.markdown("""
-    <div style="padding:20px 28px 8px;">
-        <h1 style="font-size:1.8rem;font-weight:800;letter-spacing:-0.4px;
-                   background:linear-gradient(130deg,#f1f1fa,#8b8baa);
-                   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-                   background-clip:text;margin:0;">
-            📈 SMC Screener &mdash; Sinais Ativos
-        </h1>
-        <p style="color:#4a4a68;margin-top:5px;font-size:0.82rem;">
-            Varredura Diária (D1) · ICT/SMC 2025-2026 · Estruturas com Sweep Confirmado
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    # ─── CABEÇALHO ─────────────────────────────────────────────────────────────────
+    hcol_l, hcol_r = st.columns([3, 1])
+    with hcol_l:
+        st.markdown("""
+        <div style="padding:18px 4px 6px;">
+            <h1 style="font-size:1.5rem;font-weight:800;letter-spacing:-0.3px;
+                       background:linear-gradient(130deg,#f1f1fa,#8b8baa);
+                       -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                       background-clip:text;margin:0;">
+                📈 SMC Screener — Sinais Ativos
+            </h1>
+            <p style="color:var(--t3);margin-top:4px;font-size:0.74rem;letter-spacing:0.3px;">
+                Varredura D1 &nbsp;·&nbsp; ICT/SMC 2025-2026 &nbsp;·&nbsp; Sweep Confirmado &nbsp;·&nbsp; Filtro RR&nbsp;&gt;&nbsp;3
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    with hcol_r:
+        st.markdown('<div style="padding:22px 0 0;"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="btn-back">', unsafe_allow_html=True)
+        if st.button("← Página Inicial", key="btn_back_top"):
+            st.session_state.page = 'landing'
+            st.session_state.active_tab = 'all'
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
+    st.markdown('<div style="height:1px;background:var(--border);margin:4px 0 16px;"></div>', unsafe_allow_html=True)
+
+    # ─── CARREGAMENTO DE DADOS ──────────────────────────────────────────────────────
     if st.session_state.signals_df is None:
         with st.spinner("🔍 Varrendo 198 ativos (Ações · ETFs · BDRs · FIIs)... Aguarde (1-3 minutos)"):
             try:
@@ -660,55 +750,77 @@ def screener_page():
                 st.session_state.signals_df = pd.DataFrame()
 
     signals_df = st.session_state.signals_df
-    filtered = (signals_df.copy()
-                if signals_df is not None and not signals_df.empty
-                else pd.DataFrame())
 
-    if not filtered.empty:
-        # ─── HIDDEN RULE: ONLY SHOW RR > 3 ──────────────────────────────
-        filtered = filtered[filtered['RR'] > 3]
-        
-        if filter_type != "Todos":
-            filtered = filtered[filtered['Tipo'] == filter_type]
-        if filter_dir == "Alta (Bull)":
-            filtered = filtered[filtered['Sinal'] == 'bull']
-        elif filter_dir == "Baixa (Bear)":
-            filtered = filtered[filtered['Sinal'] == 'bear']
-        if filter_zone != "Todas":
-            zm = {'Discount': 'discount', 'Premium': 'premium', 'Reversal': 'reversal'}
-            filtered = filtered[filtered['Zona'] == zm.get(filter_zone, filter_zone)]
+    # Base dataset — RR > 3 (fonte de verdade para TODAS as contagens)
+    if signals_df is not None and not signals_df.empty:
+        base_df = signals_df[signals_df['RR'] > 3].copy()
+    else:
+        base_df = pd.DataFrame()
 
-    col1, col2, col3, col4 = st.columns(4)
-    total = len(filtered) if not filtered.empty else 0
-    bull  = len(filtered[filtered['Sinal'] == 'bull']) if not filtered.empty else 0
-    bear  = len(filtered[filtered['Sinal'] == 'bear']) if not filtered.empty else 0
-    bos   = len(filtered[filtered['Tipo']  == 'BOS'])  if not filtered.empty else 0
+    # Contagens totais por categoria (sempre do base_df completo)
+    total_count = len(base_df)
+    bull_count  = int((base_df['Sinal'] == 'bull').sum()) if not base_df.empty else 0
+    bear_count  = int((base_df['Sinal'] == 'bear').sum()) if not base_df.empty else 0
+    bos_count   = int((base_df['Tipo']  == 'BOS' ).sum()) if not base_df.empty else 0
+    choch_count = int((base_df['Tipo']  == 'CHOCH').sum()) if not base_df.empty else 0
 
-    def set_dir(val): st.session_state.filter_dir = val
-    def set_type(val): st.session_state.filter_type = val
+    # ─── ABAS DE FILTRO RÁPIDO ──────────────────────────────────────────────────────
+    active_tab = st.session_state.get('active_tab', 'all')
+    def set_tab(t): st.session_state.active_tab = t
 
-    st.markdown('<div class="metric-btn">', unsafe_allow_html=True)
-    with col1:
-        st.button(f"🎯 Totais: {total}", key="btn_m_all", on_click=set_dir, args=("Todas",))
-    with col2:
-        st.button(f"🟢 Alta: {bull}", key="btn_m_bull", on_click=set_dir, args=("Alta (Bull)",))
-    with col3:
-        st.button(f"🔴 Baixa: {bear}", key="btn_m_bear", on_click=set_dir, args=("Baixa (Bear)",))
-    with col4:
-        st.button(f"📊 BOS: {bos}", key="btn_m_bos", on_click=set_type, args=("BOS",))
-    st.markdown('</div>', unsafe_allow_html=True)
+    tab_defs = [
+        ('all',   '🎯', 'Todos',  total_count,  'ft-all'),
+        ('bull',  '🟢', 'Alta',   bull_count,   'ft-bull'),
+        ('bear',  '🔴', 'Baixa',  bear_count,   'ft-bear'),
+        ('bos',   '📈', 'BOS',    bos_count,    'ft-bos'),
+        ('choch', '🔄', 'CHOCH',  choch_count,  'ft-choch'),
+    ]
+    col_tabs = st.columns(5, gap="small")
+    for i, (tab_key, icon, label, count, css_cls) in enumerate(tab_defs):
+        active_cls = 'active' if active_tab == tab_key else ''
+        with col_tabs[i]:
+            st.markdown(f'<div class="filter-tab {css_cls} {active_cls}">', unsafe_allow_html=True)
+            st.button(f"{icon} {label} · {count}", key=f"ftab_{tab_key}",
+                      on_click=set_tab, args=(tab_key,), use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-    st.divider()
+    st.markdown('<div style="height:1px;background:var(--border);margin:14px 0 12px;"></div>', unsafe_allow_html=True)
 
+    # ─── APLICAR FILTROS ────────────────────────────────────────────────────────────
+    filtered = base_df.copy()
+    if   active_tab == 'bull':  filtered = filtered[filtered['Sinal'] == 'bull']
+    elif active_tab == 'bear':  filtered = filtered[filtered['Sinal'] == 'bear']
+    elif active_tab == 'bos':   filtered = filtered[filtered['Tipo']  == 'BOS']
+    elif active_tab == 'choch': filtered = filtered[filtered['Tipo']  == 'CHOCH']
+
+    filter_zone = st.session_state.get('filter_zone', 'Todas')
+    if filter_zone != 'Todas':
+        zm = {'Discount': 'discount', 'Premium': 'premium', 'Reversal': 'reversal'}
+        filtered = filtered[filtered['Zona'] == zm.get(filter_zone, filter_zone)]
+
+    # ─── TABELA DE RESULTADOS ───────────────────────────────────────────────────────
     if filtered.empty:
         st.markdown("""
         <div style="text-align:center;padding:50px 20px;">
             <div style="font-size:2.4rem;margin-bottom:12px;">🔍</div>
-            <div style="font-size:1rem;color:#8b8baa;">Nenhum sinal encontrado com os filtros aplicados.</div>
-            <div style="font-size:0.78rem;color:#4a4a68;margin-top:6px;">Tente alterar os filtros ou clique em "Novo Scan".</div>
+            <div style="font-size:1rem;color:var(--t2);">Nenhum sinal encontrado com os filtros aplicados.</div>
+            <div style="font-size:0.78rem;color:var(--t3);margin-top:6px;">
+                Tente outra aba ou altere a Zona Fibonacci no menu lateral.
+            </div>
         </div>
         """, unsafe_allow_html=True)
     else:
+        tab_label = {'all': 'Todos', 'bull': '🟢 Alta', 'bear': '🔴 Baixa',
+                     'bos': 'BOS', 'choch': 'CHOCH'}.get(active_tab, 'Todos')
+        zone_label = f" · Zona: {filter_zone}" if filter_zone != 'Todas' else ''
+        st.markdown(
+            f'<div style="font-size:0.77rem;color:var(--t3);margin-bottom:8px;">'
+            f'Exibindo <strong style="color:var(--t1);">{len(filtered)}</strong> sinal(is) '
+            f'— Filtro: <span style="color:var(--accent);">{tab_label}{zone_label}</span>'
+            f'&nbsp;·&nbsp;RR &gt; 3</div>',
+            unsafe_allow_html=True
+        )
+
         display_df = filtered.drop(columns=['Nota MTF'], errors='ignore').copy()
         if 'Sinal' in display_df.columns:
             display_df['Sinal'] = display_df['Sinal'].apply(
@@ -719,39 +831,31 @@ def screener_page():
                 else ('🟡 Premium' if x == 'premium'
                       else ('🟣 Reversal' if x == 'reversal' else (x or '—'))))
 
-        # Use columns to manually center the dataframe
-        c_left, c_cen, c_right = st.columns([1, 6, 1])
-        with c_cen:
-            st.dataframe(
-                display_df,
-                use_container_width=True,
-                height=min(520, 80 + 38 * len(display_df)),
-                hide_index=True,
-                column_config={
-                    "Ticker": st.column_config.TextColumn("Ticker", width="small"),
-                    "Sinal": st.column_config.TextColumn("Sinal", width="small"),
-                    "Tipo": st.column_config.TextColumn("Tipo", width="small"),
-                    "Preço": st.column_config.NumberColumn("Preço", format="$%f", width="small"),
-                    "POI": st.column_config.TextColumn("POI", width="medium"),
-                    "POI Preço": st.column_config.NumberColumn("POI Preço", format="$%f", width="small"),
-                    "Zona": st.column_config.TextColumn("Zona", width="medium"),
-                    "SL": st.column_config.NumberColumn("Stop Loss", format="$%f", width="small"),
-                    "TP1": st.column_config.NumberColumn("Alvo", format="$%f", width="small"),
-                    "RR": st.column_config.NumberColumn("RR", format="%.2f", width="small")
-                }
-            )
-            st.caption(
-                f"<div style='text-align: center'>Exibindo {len(display_df)} sinal(is) rigorosamente filtrados (RR > 3) | "
-                f"última varredura: "
-                f"{st.session_state.last_run.strftime('%d/%m/%Y %H:%M') if st.session_state.last_run else '—'}</div>",
-                unsafe_allow_html=True
-            )
+        st.dataframe(
+            display_df,
+            use_container_width=True,
+            height=min(520, 80 + 38 * len(display_df)),
+            hide_index=True,
+            column_config={
+                "Ticker":    st.column_config.TextColumn("Ticker",     width="small"),
+                "Sinal":     st.column_config.TextColumn("Sinal",      width="small"),
+                "Tipo":      st.column_config.TextColumn("Tipo",       width="small"),
+                "Preço":     st.column_config.NumberColumn("Preço",    format="R$%.2f", width="small"),
+                "POI":       st.column_config.TextColumn("POI",        width="medium"),
+                "POI Preço": st.column_config.NumberColumn("POI Preço",format="R$%.2f", width="small"),
+                "Zona":      st.column_config.TextColumn("Zona",       width="medium"),
+                "SL":        st.column_config.NumberColumn("Stop Loss", format="R$%.2f", width="small"),
+                "TP1":       st.column_config.NumberColumn("Alvo",      format="R$%.2f", width="small"),
+                "RR":        st.column_config.NumberColumn("RR",        format="%.2fx",  width="small"),
+            }
+        )
 
         st.divider()
         st.markdown("### 📊 Gráfico Interativo")
         tickers_available = filtered['Ticker'].unique().tolist()
         if tickers_available:
-            selected_ticker = st.selectbox("Selecione o ativo", tickers_available, key="chart_ticker")
+            selected_ticker = st.selectbox("Selecione o ativo para visualizar",
+                                           tickers_available, key="chart_ticker")
             with st.spinner(f"Carregando gráfico de {selected_ticker}..."):
                 try:
                     import yfinance as yf
@@ -764,14 +868,13 @@ def screener_page():
                         df_raw.rename(columns={'Datetime': 'Date'}, inplace=True)
                     df_raw.reset_index(drop=True, inplace=True)
                     df_analyzed = detect_smc_signals(df_raw)
-                    
+
                     mtf_row = filtered[filtered['Ticker'] == selected_ticker].iloc[0]
                     trade_info = {
                         'entry': float(mtf_row['Preço']),
-                        'sl': float(mtf_row['SL']),
-                        'tp': float(mtf_row['TP1'])
+                        'sl':    float(mtf_row['SL']),
+                        'tp':    float(mtf_row['TP1'])
                     }
-                    
                     fig = build_chart(df_analyzed, selected_ticker, trade_info=trade_info)
                     st.plotly_chart(fig, use_container_width=True)
 
