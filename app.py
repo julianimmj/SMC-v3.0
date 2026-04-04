@@ -365,8 +365,8 @@ def landing_page():
           <div class="h1">Screener SMC<br><span class="g">para a B3</span></div>
           <span class="ver">v3.0 &nbsp;·&nbsp; Yahoo Finance &nbsp;·&nbsp; Timeframe D1</span>
           <div class="hdesc">
-            Varredura diária de <strong>200+ ativos</strong> com lógica institucional —
-            sweep confirmado, BOS/CHOCH validado, OBs, FVGs e Fibonacci automáticos.
+            Varredura diária de <strong>198 ativos</strong> da B3 — ações, ETFs, BDRs e FIIs —
+            com lógica institucional: sweep confirmado, BOS/CHOCH validado, OBs, FVGs e Fibonacci.
           </div>
           <div class="checks">
             <div class="ck">Sweep de liquidez obrigatório</div>
@@ -398,7 +398,7 @@ def landing_page():
               <div class="prow"><span class="tk">BBDC4</span><span class="st c">CHOCH</span><span class="dr up">▲ Alta</span><span class="zn">🔵 Discount</span></div>
             </div>
             <div class="pfoot">
-              <span>200+ ativos escaneados</span><span>yfinance · B3</span><span>D1 diário</span>
+              <span>198 ativos verificados</span><span>Ações · ETFs · BDRs · FIIs</span><span>D1 diário</span>
             </div>
           </div>
         </div>
@@ -407,13 +407,13 @@ def landing_page():
     # ── Stats bar compacta ────────────────────────────────────────────────────────
     col_s1, col_s2, col_s3, col_s4 = st.columns(4)
     with col_s1:
-        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">200+</span><div class="slbl">Ativos</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">198</span><div class="slbl">Ativos</div></div>', unsafe_allow_html=True)
     with col_s2:
         st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">D1</span><div class="slbl">Timeframe</div></div>', unsafe_allow_html=True)
     with col_s3:
         st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">6</span><div class="slbl">Validações</div></div>', unsafe_allow_html=True)
     with col_s4:
-        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">0%</span><div class="slbl">Fake BOS</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">RR>3</span><div class="slbl">Filtro Mín.</div></div>', unsafe_allow_html=True)
 
     st.markdown('<div style="height:2px;background:linear-gradient(90deg,transparent,rgba(79,142,247,0.2),transparent);margin:0 0 4px;"></div>', unsafe_allow_html=True)
 
@@ -650,7 +650,7 @@ def screener_page():
     """, unsafe_allow_html=True)
 
     if st.session_state.signals_df is None:
-        with st.spinner("🔍 Varrendo 200+ ativos da B3... Aguarde (1-3 minutos)"):
+        with st.spinner("🔍 Varrendo 198 ativos (Ações · ETFs · BDRs · FIIs)... Aguarde (1-3 minutos)"):
             try:
                 signals = run_screener('tickers_b3.csv')
                 st.session_state.signals_df = signals
