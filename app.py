@@ -430,6 +430,8 @@ def landing_page():
         """, unsafe_allow_html=True)
         # Botão na mesma coluna — naturalmente alinhado com o título acima
         if st.button("🚀  Iniciar Screener Agora", key="btn_start"):
+            st.session_state.signals_df = None   # sempre força novo scan
+            st.session_state.active_tab = 'all'
             st.session_state.page = 'screener'
             st.rerun()
         st.markdown('<div style="height:32px;"></div>', unsafe_allow_html=True)
@@ -678,6 +680,7 @@ def screener_page():
         if st.button("🏠  Página Inicial", key="btn_home", use_container_width=True):
             st.session_state.page = 'landing'
             st.session_state.active_tab = 'all'
+            st.session_state.signals_df = None
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
@@ -733,6 +736,7 @@ def screener_page():
         if st.button("← Página Inicial", key="btn_back_top"):
             st.session_state.page = 'landing'
             st.session_state.active_tab = 'all'
+            st.session_state.signals_df = None
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
