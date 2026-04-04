@@ -374,6 +374,21 @@ section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #07071a, #0c0c24) !important;
     border-right: 1px solid var(--border) !important;
 }
+
+/* ══════════ MOBILE RESPONSIVNESS ══════════ */
+@media (max-width: 768px) {
+    .h1 { font-size: 2.5rem; line-height: 1.1; }
+    .nav { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .nav-pills { flex-wrap: wrap; justify-content: flex-start; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat { border-bottom: 1px solid var(--border); }
+    .stat:nth-child(2n) { border-right: none; }
+    .flow-band, .feat-section { padding: 20px 15px; }
+    .steps { grid-template-columns: repeat(2, 1fr); gap: 25px; }
+    .steps::before { display: none; }
+    .prow { grid-template-columns: auto auto; justify-content: space-between; row-gap: 8px; }
+    .zn { text-align: right; }
+}
 </style>
 """, unsafe_allow_html=True)
 
