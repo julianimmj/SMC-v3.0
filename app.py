@@ -443,8 +443,6 @@ def landing_page():
           </div>
         </div>
         """, unsafe_allow_html=True)
-        </div>
-        """, unsafe_allow_html=True)
         
     with col_right:
         st.markdown("""
