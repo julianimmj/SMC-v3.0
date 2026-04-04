@@ -1,5 +1,5 @@
 """
-SMC Cloud Screener v3.0 - Complete Logic
+SMC Cloud Screener v3.0 - Complete Logic (Refatoção Rigorosa SMC)
 Liquidity Sweeps + Strong Structures + BOS/CHOCH + Fibonacci + Order Blocks + FVG
 """
 
@@ -74,99 +74,136 @@ def detect_liquidity_sweeps(df: pd.DataFrame) -> pd.DataFrame:
     df['prev_swing_low'] = df['swing_low'].shift(1).ffill()
     df['prev_swing_high'] = df['swing_high'].shift(1).ffill()
 
-    # Bull sweep: wick goes below previous swing low + closes bullish (body engulfs sweep)
+    # Bull sweep: wick goes below previous swing low + wraps back up (avoids marking pure dumps as sweeps)
     df['bull_sweep'] = (
         (df['Low'] < df['prev_swing_low']) &
-        (df['Close'] > df['Open'])
+        (df['Close'] > df['prev_swing_low']) 
     )
 
-    # Bear sweep: wick goes above previous swing high + closes bearish
+    # Bear sweep: wick goes above previous swing high + wraps back down
     df['bear_sweep'] = (
         (df['High'] > df['prev_swing_high']) &
-        (df['Close'] < df['Open'])
+        (df['Close'] < df['prev_swing_high'])
     )
 
     return df
 
 
-def identify_strong_structures(df: pd.DataFrame) -> pd.DataFrame:
+def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Identify strong highs/lows: points that formed AFTER a liquidity sweep.
-    A strong low forms when price sweeps a prior low then rallies (bull sweep),
-    making the LOW of that sweep candle a 'protected' level.
-    A strong high forms when price sweeps a prior high then falls (bear sweep).
+    Rastrea rigorosamente 200+ candles como uma Máquina de Estado.
+    Define Strong/Weak pontos ativamente baseados em Sweeps prévios e Quebras Corporais (Closes).
+    Fake BOS (sem sweep prévio) é ignorado e não reposiciona os pontos fortes da estrutura.
     """
     df = detect_liquidity_sweeps(df)
-
-    df['strong_low'] = False
-    df['strong_high'] = False
-
-    # After a bull_sweep candle, its Low is a strong low candidate
-    # After a bear_sweep candle, its High is a strong high candidate
-    for i in range(1, len(df) - 1):
-        if df.loc[i, 'bull_sweep']:
-            df.loc[i, 'strong_low'] = True
-        if df.loc[i, 'bear_sweep']:
-            df.loc[i, 'strong_high'] = True
-
-    return df
-
-
-def detect_bos_choch(df: pd.DataFrame) -> pd.DataFrame:
-    """Detect BOS and CHOCH with close body validation."""
-    df = identify_strong_structures(df)
-
+    
     df['bos_bull'] = False
     df['bos_bear'] = False
     df['choch_bull'] = False
     df['choch_bear'] = False
+    
+    df['active_strong_low'] = np.nan
+    df['active_strong_low_idx'] = np.nan
+    df['active_strong_high'] = np.nan
+    df['active_strong_high_idx'] = np.nan
+    
+    trend = 0  # 1 = Bull, -1 = Bear
+    
+    recent_high = df['High'].iloc[0]
+    recent_low = df['Low'].iloc[0]
+    
+    strong_low = None
+    strong_high = None
+    
+    candidate_low = None
+    candidate_high = None
+    
+    for i in range(1, len(df)):
+        cur_high = df.loc[i, 'High']
+        cur_low = df.loc[i, 'Low']
+        cur_close = df.loc[i, 'Close']
 
-    strong_high_levels = []
-    strong_low_levels = []
+        # Atualiza extremos da perna atual (weak levels temporarios)
+        if cur_high > recent_high:
+            recent_high = cur_high
+        if cur_low < recent_low:
+            recent_low = cur_low
+            
+        # Avalia varreduras -> Criam candidatos a Pontos Fortes
+        if df.loc[i, 'bull_sweep']:
+            if candidate_low is None or cur_low < candidate_low[0]:
+                candidate_low = (cur_low, i)
+        else:
+            if candidate_low is not None and cur_low <= candidate_low[0]:
+                candidate_low = (cur_low, i) # Pode renovar se for parte de uma mesma puxada profunda
 
-    last_bos_bull_level = None
-    last_bos_bear_level = None
-    trend = None  # 'up' or 'down'
+        if df.loc[i, 'bear_sweep']:
+            if candidate_high is None or cur_high > candidate_high[0]:
+                candidate_high = (cur_high, i)
+        else:
+            if candidate_high is not None and cur_high >= candidate_high[0]:
+                candidate_high = (cur_high, i)
 
-    for i in range(2, len(df)):
-        row = df.loc[i]
-        prev_row = df.loc[i - 1]
-
-        curr_close = row['Close']
-        prev_close = prev_row['Close']
-
-        # Accumulate strong levels seen so far
-        if df.loc[i - 1, 'strong_high']:
-            strong_high_levels.append(df.loc[i - 1, 'High'])
-        if df.loc[i - 1, 'strong_low']:
-            strong_low_levels.append(df.loc[i - 1, 'Low'])
-
-        if not strong_high_levels or not strong_low_levels:
-            continue
-
-        last_strong_high = max(strong_high_levels[-5:])  # Most relevant recent
-        last_strong_low = min(strong_low_levels[-5:])
-
-        # BOS Bull: close breaks above last strong high (continuation up)
-        if curr_close > last_strong_high and prev_close <= last_strong_high:
-            if trend == 'down':
-                # Breaking up in a downtrend = CHOCH (reversal signal)
-                df.loc[i, 'choch_bull'] = True
-            else:
-                df.loc[i, 'bos_bull'] = True
-            trend = 'up'
-            last_bos_bull_level = last_strong_high
-
-        # BOS Bear: close breaks below last strong low (continuation down)
-        elif curr_close < last_strong_low and prev_close >= last_strong_low:
-            if trend == 'up':
-                # Breaking down in an uptrend = CHOCH (reversal signal)
+        # Valida Quebras Estruturais (apenas Close válido)
+        if trend == 1:
+            # CHOCH de Baixa: Perde o verdadeiro Strong Low ativo
+            if strong_low is not None and cur_close < strong_low[0]:
                 df.loc[i, 'choch_bear'] = True
-            else:
+                trend = -1
+                # O topo que originou a queda vira o novo Strong High (usa o candidato ou o topo absoluto se faltar)
+                strong_high = candidate_high if candidate_high is not None else (recent_high, df.loc[:i, 'High'].idxmax())
+                candidate_low = None # Invalida o antigo candidato de compra
+                recent_low = cur_low 
+                recent_high = cur_high
+                
+            # BOS de Alta: Rompe o Weak High atual e TEM um candidato de Strong Low (teve sweep antes de subir)
+            elif cur_close > recent_high and candidate_low is not None:
+                df.loc[i, 'bos_bull'] = True
+                strong_low = candidate_low
+                candidate_low = None
+                recent_high = cur_high
+                recent_low = cur_low
+                
+        elif trend == -1:
+            # CHOCH de Alta: Rompe acima do verdadeiro Strong High ativo
+            if strong_high is not None and cur_close > strong_high[0]:
+                df.loc[i, 'choch_bull'] = True
+                trend = 1
+                strong_low = candidate_low if candidate_low is not None else (recent_low, df.loc[:i, 'Low'].idxmin())
+                candidate_high = None
+                recent_high = cur_high
+                recent_low = cur_low
+                
+            # BOS de Baixa: Perde o Weak Low atual e TEM um candidato de Strong High (teve sweep antes de cair)
+            elif cur_close < recent_low and candidate_high is not None:
                 df.loc[i, 'bos_bear'] = True
-            trend = 'down'
-            last_bos_bear_level = last_strong_low
+                strong_high = candidate_high
+                candidate_high = None
+                recent_low = cur_low
+                recent_high = cur_high
+                
+        else: # Estado Inicial -> Esperando a primeira estrutura
+            if cur_close > recent_high and candidate_low is not None:
+                trend = 1
+                df.loc[i, 'choch_bull'] = True
+                strong_low = candidate_low
+                candidate_low = None
+                recent_high = cur_high
+            elif cur_close < recent_low and candidate_high is not None:
+                trend = -1
+                df.loc[i, 'choch_bear'] = True
+                strong_high = candidate_high
+                candidate_high = None
+                recent_low = cur_low
 
+        # Anexa estado aos frames
+        if strong_low is not None:
+            df.loc[i, 'active_strong_low'] = strong_low[0]
+            df.loc[i, 'active_strong_low_idx'] = strong_low[1]
+        if strong_high is not None:
+            df.loc[i, 'active_strong_high'] = strong_high[0]
+            df.loc[i, 'active_strong_high_idx'] = strong_high[1]
+            
     return df
 
 
@@ -185,17 +222,16 @@ def calculate_fibonacci(start_price: float, end_price: float) -> dict:
     return levels
 
 
-def find_order_blocks(df: pd.DataFrame, signal_idx: int, direction: str) -> pd.DataFrame:
-    """Find Order Blocks prior to a strong move."""
-    if signal_idx < 3 or signal_idx >= len(df):
-        return pd.DataFrame()
-
-    search_range = range(max(0, signal_idx - 15), signal_idx)
+def find_order_blocks(df: pd.DataFrame, start_idx: int, end_idx: int, direction: str) -> pd.DataFrame:
+    """Encontra os últimos Order Blocks institucionais APENAS dentro da pernada definida."""
     blocks = []
-
-    for i in search_range:
+    # Proteção de limite
+    start_idx = max(0, start_idx)
+    end_idx = min(len(df)-1, max(start_idx+1, end_idx))
+    
+    for i in range(start_idx, end_idx):
         if direction == 'bull':
-            # For bullish OB: last bearish candle before the impulse up
+            # OB bullish = ultimos candles vermelhos acumulativos antes do empurrão
             if df.loc[i, 'Close'] < df.loc[i, 'Open']:
                 blocks.append({
                     'idx': i,
@@ -205,7 +241,7 @@ def find_order_blocks(df: pd.DataFrame, signal_idx: int, direction: str) -> pd.D
                     'color': 'bearish'
                 })
         else:
-            # For bearish OB: last bullish candle before the impulse down
+            # OB bearish = últimos candles verdes acumulativos antes do drop
             if df.loc[i, 'Close'] > df.loc[i, 'Open']:
                 blocks.append({
                     'idx': i,
@@ -214,21 +250,22 @@ def find_order_blocks(df: pd.DataFrame, signal_idx: int, direction: str) -> pd.D
                     'close': df.loc[i, 'Close'],
                     'color': 'bullish'
                 })
-
     return pd.DataFrame(blocks)
 
 
-def find_fvg(df: pd.DataFrame) -> list:
-    """Find Fair Value Gaps (3 candles: gap between n-1 and n+1)."""
+def find_fvg(df: pd.DataFrame, start_idx: int, end_idx: int) -> list:
+    """Encontra FVGs reais em um range estrutural (3 candles de imbalance)."""
     fvgs = []
-
-    for i in range(1, len(df) - 1):
+    start_idx = max(1, start_idx)
+    end_idx = min(len(df)-1, max(start_idx+1, end_idx))
+    
+    for i in range(start_idx, end_idx):
         high_n_minus1 = df.loc[i - 1, 'High']
         low_n_minus1 = df.loc[i - 1, 'Low']
         high_n_plus1 = df.loc[i + 1, 'High']
         low_n_plus1 = df.loc[i + 1, 'Low']
 
-        # Bearish FVG: high of n-1 is BELOW low of n+1 → gap going up
+        # Imbalance de Alta (FVG Bullish): O topo do candle anterior nem trisca no fundo do próximo
         if high_n_minus1 < low_n_plus1:
             fvgs.append({
                 'type': 'bullish',
@@ -238,7 +275,7 @@ def find_fvg(df: pd.DataFrame) -> list:
                 'idx': i
             })
 
-        # Bullish FVG: low of n-1 is ABOVE high of n+1 → gap going down
+        # Imbalance de Baixa (FVG Bearish)
         if low_n_minus1 > high_n_plus1:
             fvgs.append({
                 'type': 'bearish',
@@ -247,13 +284,12 @@ def find_fvg(df: pd.DataFrame) -> list:
                 'mid': (low_n_minus1 + high_n_plus1) / 2,
                 'idx': i
             })
-
     return fvgs
 
 
 def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
-    """Main function to detect all SMC signals."""
-    df = detect_bos_choch(df)
+    """Função principal que aplica a malha fina aos sinais baseados em Smart Money."""
+    df = map_market_structure(df)
 
     df['signal'] = None
     df['signal_type'] = None
@@ -263,8 +299,10 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
     df['sl_price'] = np.nan
     df['tp1_price'] = np.nan
     df['mtf_note'] = None
-
-    fvgs = find_fvg(df)
+    
+    # Flags para a visualização do Gráfico no app.py
+    df['strong_low'] = False
+    df['strong_high'] = False
 
     for i in range(10, len(df)):
         signal_dir = None
@@ -286,113 +324,145 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
         if signal_dir is None:
             continue
 
+        # == Cenário COMPRA ==
+        if signal_dir == 'bull':
+            # Ponto de origem absoluto do forte movimento
+            sl_val = df.loc[i, 'active_strong_low']
+            if pd.isna(df.loc[i, 'active_strong_low_idx']):
+                continue
+            sl_idx = int(df.loc[i, 'active_strong_low_idx'])
+            
+            # Marca para plotagem correta
+            df.loc[sl_idx, 'strong_low'] = True
+
+            # Pegamos como ALVO o ápice do movimento, calculado retroativamente pra fib
+            top_val = df['High'].iloc[sl_idx : len(df)].max()
+            top_idx = df['High'].iloc[sl_idx : len(df)].idxmax()
+            
+            if top_val <= sl_val:
+                continue
+
+            fib = calculate_fibonacci(sl_val, top_val)
+            fib_50 = fib['0.5']
+            
+            order_blocks = find_order_blocks(df, sl_idx, top_idx, signal_dir)
+            fvgs = find_fvg(df, sl_idx, top_idx)
+            
+            poi_price = None
+            poi_type = None
+
+            # Condição SMC: O POI M-U-S-T estar na zona Discount (< 50%) para compras.
+            if not order_blocks.empty:
+                discount_obs = order_blocks[order_blocks['low'] < fib_50]
+                if not discount_obs.empty:
+                    ob = discount_obs.iloc[-1]
+                    poi_price = (ob['high'] + ob['low']) / 2
+                    poi_type = 'Order Block'
+
+            if poi_price is None:
+                for fvg in reversed(fvgs):
+                    if fvg['type'] == 'bullish' and fvg['mid'] < fib_50:
+                        poi_price = fvg['mid']
+                        poi_type = 'FVG'
+                        break
+
+            if poi_price is None:
+                poi_price = fib_50
+                poi_type = 'Fib 50%'
+
+            sl_price = sl_val * 0.999 # O SL é matemático abaixo do fundo forte
+            tp1_price = top_val # TP é o Equal-High/Weak-High garantido, o ápice
+            
+        # == Cenário VENDA ==
+        else: 
+            sh_val = df.loc[i, 'active_strong_high']
+            if pd.isna(df.loc[i, 'active_strong_high_idx']):
+                continue
+            sh_idx = int(df.loc[i, 'active_strong_high_idx'])
+            
+            # Marca para plotagem
+            df.loc[sh_idx, 'strong_high'] = True
+            
+            # Ponto fraco pra ser mitigado
+            bot_val = df['Low'].iloc[sh_idx : len(df)].min()
+            bot_idx = df['Low'].iloc[sh_idx : len(df)].idxmin()
+            
+            if bot_val >= sh_val:
+                continue
+
+            fib = calculate_fibonacci(sh_val, bot_val)
+            fib_50 = fib['0.5']
+            
+            order_blocks = find_order_blocks(df, sh_idx, bot_idx, signal_dir)
+            fvgs = find_fvg(df, sh_idx, bot_idx)
+            
+            poi_price = None
+            poi_type = None
+
+            # Condição SMC: O POI tem que estar Premium (> 50%) para vendas.
+            if not order_blocks.empty:
+                premium_obs = order_blocks[order_blocks['high'] > fib_50]
+                if not premium_obs.empty:
+                    ob = premium_obs.iloc[-1]
+                    poi_price = (ob['high'] + ob['low']) / 2
+                    poi_type = 'Order Block'
+
+            if poi_price is None:
+                for fvg in reversed(fvgs):
+                    if fvg['type'] == 'bearish' and fvg['mid'] > fib_50:
+                        poi_price = fvg['mid']
+                        poi_type = 'FVG'
+                        break
+
+            if poi_price is None:
+                poi_price = fib_50
+                poi_type = 'Fib 50%'
+
+            sl_price = sh_val * 1.001 # Protegido de liquidação acidental no High
+            tp1_price = bot_val
+
+        # Atribuição da Zona com base no preço DE HOJE
         current_price = df.loc[i, 'Close']
-
-        # Fibonacci: find relevant swing range (last ~20 candles)
-        lookback = min(i, 20)
         if signal_dir == 'bull':
-            start_price = df.loc[i - lookback:i, 'Low'].min()
-            end_price = df.loc[i - lookback:i, 'High'].max()
+            zone = 'discount' if current_price <= fib_50 else 'premium'
         else:
-            start_price = df.loc[i - lookback:i, 'Low'].min()
-            end_price = df.loc[i - lookback:i, 'High'].max()
-
-        fib = calculate_fibonacci(start_price, end_price)
-        fib_50 = fib.get('0.5', current_price)
-
-        zone = 'discount' if current_price < fib_50 else 'premium'
-
-        poi_price = None
-        poi_type = None
-
-        # Prioritize POI near current price
-        order_blocks = find_order_blocks(df, i, signal_dir)
-
-        if signal_dir == 'bull':
-            # Look for OB below current price (discount zone)
-            if not order_blocks.empty:
-                close_obs = order_blocks[order_blocks['low'] <= current_price]
-                if not close_obs.empty:
-                    ob = close_obs.iloc[-1]
-                    poi_price = (ob['high'] + ob['low']) / 2
-                    poi_type = 'Order Block'
-
-            # Look for bullish FVG below current price
-            for fvg in reversed(fvgs):
-                if fvg['type'] == 'bullish' and fvg['mid'] < current_price and fvg['idx'] < i:
-                    if poi_price is None or abs(fvg['mid'] - current_price) < abs(poi_price - current_price):
-                        poi_price = fvg['mid']
-                        poi_type = 'FVG'
-                    break
-
-            if poi_price is None:
-                poi_price = fib_50
-                poi_type = 'Fib 50%'
-
-        else:  # bear
-            if not order_blocks.empty:
-                close_obs = order_blocks[order_blocks['high'] >= current_price]
-                if not close_obs.empty:
-                    ob = close_obs.iloc[-1]
-                    poi_price = (ob['high'] + ob['low']) / 2
-                    poi_type = 'Order Block'
-
-            for fvg in reversed(fvgs):
-                if fvg['type'] == 'bearish' and fvg['mid'] > current_price and fvg['idx'] < i:
-                    if poi_price is None or abs(fvg['mid'] - current_price) < abs(poi_price - current_price):
-                        poi_price = fvg['mid']
-                        poi_type = 'FVG'
-                    break
-
-            if poi_price is None:
-                poi_price = fib_50
-                poi_type = 'Fib 50%'
-
-        # SL/TP
-        strong_lows = df[df['strong_low']]['Low'].values
-        strong_highs = df[df['strong_high']]['High'].values
-
-        if signal_dir == 'bull':
-            sl_price = float(df.loc[i - lookback:i, 'Low'].min()) * 0.995
-            tp1_price = float(df.loc[i - lookback:i, 'High'].max()) * 1.01
-        else:
-            sl_price = float(df.loc[i - lookback:i, 'High'].max()) * 1.005
-            tp1_price = float(df.loc[i - lookback:i, 'Low'].min()) * 0.99
+            zone = 'premium' if current_price >= fib_50 else 'discount'
 
         df.loc[i, 'signal'] = signal_dir
         df.loc[i, 'signal_type'] = signal_type
         df.loc[i, 'poi_type'] = poi_type
-        df.loc[i, 'poi_price'] = round(float(poi_price), 2) if poi_price else np.nan
+        df.loc[i, 'poi_price'] = round(float(poi_price), 2)
         df.loc[i, 'zone'] = zone
         df.loc[i, 'sl_price'] = round(float(sl_price), 2)
         df.loc[i, 'tp1_price'] = round(float(tp1_price), 2)
-        df.loc[i, 'mtf_note'] = 'Aguardar CHOCH interno LTF + alinhamento de fluxo'
+        df.loc[i, 'mtf_note'] = 'Aguardar CHOCH interno LTF no M15 para confirmar absorção'
 
+    df.drop(columns=['active_strong_low_idx', 'active_strong_high_idx', 'active_strong_low', 'active_strong_high'], errors='ignore', inplace=True)
     return df
 
 
-def get_latest_signals(df: pd.DataFrame, lookback: int = 10) -> pd.DataFrame:
-    """Extract the latest signals from the dataframe."""
+def get_latest_signals(df: pd.DataFrame, lookback: int = 15) -> pd.DataFrame:
+    """Extrai os últimos sinais relevantes para display rápido."""
     signals = df[df['signal'].notna()].tail(lookback)
     return signals
 
 
 def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
-    """Run the complete screener on all tickers."""
+    """Varre todos os tickets da bolsa passando o rigor de RR e SL."""
     try:
         tickers_df = pd.read_csv(tickers_file)
-        # Deduplicate to prevent processing the same asset multiple times
+        # Deduplica ativos
         tickers = list(set([f"{t}.SA" for t in tickers_df['ticker'].dropna()]))
     except Exception as e:
         print(f"Erro ao ler tickers: {e}")
         return pd.DataFrame()
 
-    print(f"Baixando dados de {len(tickers)} ativos...")
+    print(f"Baixando dados retrospectivos de {len(tickers)} ativos...")
     data = download_data_batch(tickers)
 
     all_signals = []
 
-    print("Processando sinais SMC...")
+    print("Submetendo os ativos ao Smart Money Concepts Algoritmo...")
     for ticker, df in data.items():
         if df is None or len(df) < 50:
             continue
@@ -405,9 +475,7 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
                 latest = signals.iloc[-1]
                 if pd.notna(latest['signal']):
                     ticker_clean = ticker.replace('.SA', '')
-                    # Use the last row's Close from the original dataframe
-                    last_close = df['Close'].iloc[-1]
-                    current_price = float(last_close) if not isinstance(last_close, pd.Series) else float(last_close.iloc[0])
+                    last_close = float(df['Close'].iloc[-1])
                     poi = latest.get('poi_price')
                     sl = latest.get('sl_price')
                     tp1 = latest.get('tp1_price')
@@ -415,20 +483,16 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
                     if pd.isna(poi) or pd.isna(sl) or pd.isna(tp1):
                         continue
 
-                    poi = float(poi)
-                    sl = float(sl)
-                    tp1 = float(tp1)
-
-                    # Invalidation & Logic Check
+                    # Filtro severo de Invalidação pós-signal (Stop-Out Dinâmico)
                     signal_idx = latest.name
                     if latest['signal'] == 'bull':
-                        if poi <= sl: continue # Erro lógico: SL maior que Entrada
-                        if df.loc[signal_idx:, 'Low'].min() <= sl: continue # Já foi Stopado
+                        if poi <= sl: continue # Protecao matemática 
+                        if df.loc[signal_idx:, 'Low'].min() <= sl: continue # Fundo protegido quebrado hoje -> Setup Falhou
                         risk = abs(poi - sl)
                         reward = abs(tp1 - poi)
                     else: # bear
-                        if poi >= sl: continue # Erro lógico: SL menor que Entrada
-                        if df.loc[signal_idx:, 'High'].max() >= sl: continue # Já foi Stopado
+                        if poi >= sl: continue
+                        if df.loc[signal_idx:, 'High'].max() >= sl: continue
                         risk = abs(sl - poi)
                         reward = abs(poi - tp1)
 
@@ -438,16 +502,16 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
                         'Ticker': ticker_clean,
                         'Sinal': latest['signal'],
                         'Tipo': latest['signal_type'],
-                        'Preço': round(current_price, 2),
+                        'Preço': round(last_close, 2),
                         'POI': latest.get('poi_type'),
-                        'POI Preço': round(float(poi), 2) if pd.notna(poi) else None,
+                        'POI Preço': round(float(poi), 2),
                         'Zona': latest.get('zone'),
-                        'SL': round(float(sl), 2) if pd.notna(sl) else None,
-                        'TP1': round(float(tp1), 2) if pd.notna(tp1) else None,
+                        'SL': round(float(sl), 2),
+                        'TP1': round(float(tp1), 2),
                         'RR': rr,
                         'Nota MTF': latest.get('mtf_note')
                     })
-        except Exception:
+        except Exception as e:
             continue
 
     if all_signals:
@@ -461,4 +525,4 @@ if __name__ == '__main__':
         print("\n=== SINAIS SMC ENCONTRADOS ===")
         print(result.to_string())
     else:
-        print("Nenhum sinal encontrado com os critérios configurados.")
+        print("A malha fina não reteve nenhum sinal ativo com as configurações SMC rigorosas de hoje.")

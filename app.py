@@ -565,7 +565,7 @@ def landing_page():
 
 # ─── Chart Builder ───────────────────────────────────────────────────────────────
 def build_chart(df: pd.DataFrame, ticker: str, trade_info: dict = None) -> go.Figure:
-    df_plot = df.tail(120).copy().reset_index(drop=True)
+    df_plot = df.tail(180).copy().reset_index(drop=True)
     x_axis = (pd.to_datetime(df_plot['Date']).dt.strftime('%Y-%m-%d')
                if 'Date' in df_plot.columns else list(range(len(df_plot))))
 
