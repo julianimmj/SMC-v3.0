@@ -394,54 +394,6 @@ if 'filter_zone' not in st.session_state:
 # ─── Landing Page ────────────────────────────────────────────────────────────────
 def landing_page():
 
-    with st.sidebar:
-        st.markdown("<div style='font-size:0.8rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Cadastrar Alerta 📩</div>", unsafe_allow_html=True)
-        st.caption("Receba os sinais diários de alta probabilidade do SMC diretamente na sua caixa de entrada, varridos na nuvem às 03:00.")
-        with st.form("form_email"):
-            email_input = st.text_input("Seu endereço de E-mail", placeholder="seu.email@gmail.com")
-            submitted = st.form_submit_button("Inscrever-se", use_container_width=True)
-            if submitted and email_input:
-                try:
-                    import json
-                    import os
-                    email_added = False
-                    
-                    # 1. Tentativa via Github API (Streamlit Secrets)
-                    try:
-                        from github import Github
-                        gh_token = st.secrets["GITHUB_TOKEN"]
-                        g = Github(gh_token)
-                        repo = g.get_repo("julianimmj/SMC-v3.0")
-                        contents = repo.get_contents("emails.json", ref="main")
-                        data_gh = json.loads(contents.decoded_content.decode())
-                        
-                        if email_input not in data_gh.get("emails", []):
-                            data_gh.setdefault("emails", []).append(email_input)
-                            repo.update_file(contents.path, f"subs: add {email_input}", json.dumps(data_gh, indent=2), contents.sha, branch="main")
-                            email_added = True
-                        else:
-                            st.info("E-mail já está na lista.")
-                    except Exception as gh_err:
-                        # 2. Fallback local / dev
-                        with open("emails.json", "r") as f:
-                            data = json.load(f)
-                        
-                        if email_input not in data.get("emails", []):
-                            data.setdefault("emails", []).append(email_input)
-                            with open("emails.json", "w") as f:
-                                json.dump(data, f)
-                            email_added = True
-                        else:
-                            if not email_added: # if it didn't just fail silently above
-                                st.info("E-mail já está na lista.")
-
-                    if email_added:
-                        st.success("✅ E-mail cadastrado com sucesso!")
-                        
-                except Exception as e:
-                    st.error(f"Erro interno ao cadastrar: {e}")
-        st.divider()
-
     # 1 ── Navbar ─────────────────────────────────────────────────────────────────
     st.markdown("""
     <div class="nav">
@@ -495,6 +447,8 @@ def landing_page():
                 st.session_state.page = 'screener'
                 st.rerun()
         st.markdown('<div style="height:32px;"></div>', unsafe_allow_html=True)
+        
+    with col_right:
         st.markdown("""
         <div style="padding: 40px 0 20px 24px;">
           <div class="panel">
@@ -515,6 +469,63 @@ def landing_page():
           </div>
         </div>
         """, unsafe_allow_html=True)
+
+    # 3 ── Email Registration Form ────────────────────────────────────────────────
+    st.markdown("<div style='height: 40px;'></div>", unsafe_allow_html=True)
+    st.markdown('<div style="height:1px;background:var(--border);margin: 0 0 40px 0;"></div>', unsafe_allow_html=True)
+    
+    ecol1, ecol2, ecol3 = st.columns([1, 2, 1])
+    with ecol2:
+        st.markdown("""
+        <div style="text-align:center; margin-bottom: 20px;">
+            <div style="font-size: 1.3rem; font-weight: 800; color:var(--t1);">Assinar Alerta Diário SMC 📩</div>
+            <div style="font-size: 0.85rem; color:var(--t3); margin-top: 5px;">Receba um e-mail às 03:00 sempre que um sinal institucional de alta probabilidade for formado na B3.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        with st.form("form_email_footer"):
+            email_input = st.text_input("Endereço de E-mail", placeholder="exemplo@gmail.com", label_visibility="collapsed")
+            submitted = st.form_submit_button("🔔  Me avisar quando houver sinais", use_container_width=True)
+            if submitted and email_input:
+                try:
+                    import json
+                    import os
+                    email_added = False
+                    
+                    try:
+                        from github import Github
+                        gh_token = st.secrets["GITHUB_TOKEN"]
+                        g = Github(gh_token)
+                        repo = g.get_repo("julianimmj/SMC-v3.0")
+                        contents = repo.get_contents("emails.json", ref="main")
+                        data_gh = json.loads(contents.decoded_content.decode())
+                        
+                        if email_input not in data_gh.get("emails", []):
+                            data_gh.setdefault("emails", []).append(email_input)
+                            repo.update_file(contents.path, f"subs: add {email_input}", json.dumps(data_gh, indent=2), contents.sha, branch="main")
+                            email_added = True
+                        else:
+                            st.info("E-mail já está na lista.")
+                    except Exception as gh_err:
+                        with open("emails.json", "r") as f:
+                            data = json.load(f)
+                        
+                        if email_input not in data.get("emails", []):
+                            data.setdefault("emails", []).append(email_input)
+                            with open("emails.json", "w") as f:
+                                json.dump(data, f)
+                            email_added = True
+                        else:
+                            if not email_added:
+                                st.info("Houve um problema com a Nuvem, mas tentamos local ou já estava listado.")
+
+                    if email_added:
+                        st.success("✅ E-mail cadastrado com sucesso! Te avisaremos do próximo setup.")
+                        
+                except Exception as e:
+                    st.error(f"Erro interno: {e}")
+                    
+    st.markdown("<div style='height: 60px;'></div>", unsafe_allow_html=True)
 
     # ── Stats bar compacta ────────────────────────────────────────────────────────
     col_s1, col_s2, col_s3, col_s4 = st.columns(4)
