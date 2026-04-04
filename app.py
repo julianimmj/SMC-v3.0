@@ -443,25 +443,8 @@ def landing_page():
           </div>
         </div>
         """, unsafe_allow_html=True)
-        # Botoes
-        bcol1, bcol2 = st.columns(2)
-        with bcol1:
-            if st.button("🚀  Realizar Novo Screener", key="btn_start", use_container_width=True):
-                st.session_state.signals_df = None   # sempre força novo scan 
-                st.session_state.active_tab = 'all'
-                st.session_state.page = 'screener'
-                st.rerun()
-        with bcol2:
-            if st.button("⏱️ Ver Último Resultado", key="btn_quick", use_container_width=True):
-                try:
-                    df_saved = pd.read_csv("latest_scan.csv")
-                    st.session_state.signals_df = df_saved
-                except:
-                    st.session_state.signals_df = None
-                st.session_state.active_tab = 'all'
-                st.session_state.page = 'screener'
-                st.rerun()
-        st.markdown('<div style="height:32px;"></div>', unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
         
     with col_right:
         st.markdown("""
@@ -485,7 +468,28 @@ def landing_page():
         </div>
         """, unsafe_allow_html=True)
 
-    # 3 ── Email Registration Form ────────────────────────────────────────────────
+    # 3 ── Botões de Ação Centralizados ───────────────────────────────────────────
+    st.markdown('<div style="height:32px;"></div>', unsafe_allow_html=True)
+    bcol_spacer1, bcol_mid1, bcol_mid2, bcol_spacer2 = st.columns([1, 1.2, 1.2, 1])
+    with bcol_mid1:
+        if st.button("🚀  Realizar Novo Screener", key="btn_start", use_container_width=True):
+            st.session_state.signals_df = None   # sempre força novo scan 
+            st.session_state.active_tab = 'all'
+            st.session_state.page = 'screener'
+            st.rerun()
+    with bcol_mid2:
+        if st.button("⏱️ Ver Último Resultado", key="btn_quick", use_container_width=True):
+            try:
+                import pandas as pd
+                df_saved = pd.read_csv("latest_scan.csv")
+                st.session_state.signals_df = df_saved
+            except:
+                st.session_state.signals_df = None
+            st.session_state.active_tab = 'all'
+            st.session_state.page = 'screener'
+            st.rerun()
+
+    # 4 ── Email Registration Form ────────────────────────────────────────────────
     st.markdown("<div style='height: 40px;'></div>", unsafe_allow_html=True)
     st.markdown('<div style="height:1px;background:var(--border);margin: 0 0 40px 0;"></div>', unsafe_allow_html=True)
     
