@@ -1,6 +1,5 @@
 ticker,empresa,tipo
 ABEV3,Ambev ON,ACAO
-AESB3,AES Brasil ON,ACAO
 AGRO3,BrasilAgro ON,ACAO
 ALLD3,Allied Tecnologia ON,ACAO
 ALOS3,Allos ON,ACAO
@@ -8,11 +7,9 @@ ALPA4,Alpargatas PN,ACAO
 AMAR3,Marisa ON,ACAO
 AMBP3,Ambipar ON,ACAO
 ANIM3,Ânima Educação ON,ACAO
-APER3,Alper ON,ACAO
 ARML3,Armac Locação ON,ACAO
 ASAI3,Assaí Atacadista ON,ACAO
 AURE3,Auren Energia ON,ACAO
-AZUL4,Azul PN,ACAO
 AZZA3,Azzas 2154 ON,ACAO
 B3SA3,B3 ON,ACAO
 BBAS3,Banco do Brasil ON,ACAO
@@ -22,21 +19,17 @@ BEEF3,Minerva Foods ON,ACAO
 BMGB4,BMG PN,ACAO
 BRAP4,Bradespar PN,ACAO
 BRAV3,Brava Energia ON,ACAO
-BRFS3,BRF ON,ACAO
 BRKM5,Braskem PNA,ACAO
 BRSR6,Banrisul PNB,ACAO
 CAML3,Camil Alimentos ON,ACAO
 CASH3,Méliuz ON,ACAO
 CBAV3,CBA ON,ACAO
-CCRO3,CCR ON,ACAO
 CMIG3,CEMIG ON,ACAO
 CMIG4,CEMIG PN,ACAO
 CMIN3,CSN Mineração ON,ACAO
 COGN3,Cogna Educação ON,ACAO
 CPFE3,CPFL Energia ON,ACAO
 CPLE3,Copel ON,ACAO
-CPLE6,Copel PNB,ACAO
-CRFB3,Carrefour Brasil ON,ACAO
 CSAN3,Cosan ON,ACAO
 CSMG3,Copasa ON,ACAO
 CSNA3,CSN ON,ACAO
@@ -48,10 +41,6 @@ DASA3,Diagnósticos da América ON,ACAO
 DIRR3,Direcional Engenharia ON,ACAO
 ECOR3,EcoRodovias ON,ACAO
 EGIE3,Engie Brasil ON,ACAO
-ELET3,Eletrobras ON,ACAO
-ELET6,Eletrobras PNB,ACAO
-ELMD3,Eletromidia ON,ACAO
-EMBR3,Embraer ON,ACAO
 ENEV3,Eneva ON,ACAO
 EQPA3,Equatorial Pará ON,ACAO
 EQTL3,Equatorial ON,ACAO
@@ -65,7 +54,6 @@ GFSA3,Gafisa ON,ACAO
 GGBR4,Gerdau PN,ACAO
 GMAT3,Grupo Mateus ON,ACAO
 GOAU4,Metalúrgica Gerdau PN,ACAO
-GOLL4,Gol Linhas Aéreas PN,ACAO
 GRND3,Grendene ON,ACAO
 GUAR3,Guararapes ON,ACAO
 HAPV3,Hapvida ON,ACAO
@@ -76,22 +64,17 @@ INTB3,Intelbras ON,ACAO
 IRBR3,IRB Brasil ON,ACAO
 ITSA4,Itaúsa PN,ACAO
 ITUB4,Itaú Unibanco PN,ACAO
-JBSS3,JBS ON,ACAO
 JHSF3,JHSF Participações ON,ACAO
-JPSA3,Jalles Machado ON,ACAO
 KEPL3,Kepler Weber ON,ACAO
 KLBN11,Klabin UNT,ACAO
 LIGT3,Light ON,ACAO
 LOGG3,Log Commercial Properties ON,ACAO
 LREN3,Lojas Renner ON,ACAO
-LVTC3,Lavvi ON,ACAO
 LWSA3,LW SA ON,ACAO
 MATD3,Mater Dei ON,ACAO
 MDIA3,M. Dias Branco ON,ACAO
 MGLU3,Magazine Luiza ON,ACAO
 MOVI3,Movida ON,ACAO
-MOVID3,Movida ON,ACAO
-MRFG3,Marfrig ON,ACAO
 MRVE3,MRV Engenharia ON,ACAO
 MTRE3,Mitre Realty ON,ACAO
 MULT3,Multiplan ON,ACAO
@@ -106,7 +89,6 @@ PCAR3,PãodeAçúcar ON,ACAO
 PETR4,Petrobras PN,ACAO
 PINE4,Pine PN,ACAO
 PNVL3,Profarma ON,ACAO
-PORT3,Wilson Sons ON,ACAO
 POSI3,Positivo Tecnologia ON,ACAO
 PRIO3,PetroRio ON,ACAO
 PSSA3,Porto Seguro ON,ACAO
@@ -130,7 +112,6 @@ SLCE3,SLC Agrícola ON,ACAO
 SMFT3,Smart Fit ON,ACAO
 SMTO3,São Martinho ON,ACAO
 SOJA3,Boa Safra ON,ACAO
-STBP3,Santos Brasil ON,ACAO
 SUZB3,Suzano ON,ACAO
 TAEE11,TAESA UNT,ACAO
 TECN3,Tecnisa ON,ACAO
@@ -138,7 +119,6 @@ TEND3,Construtora Tenda ON,ACAO
 TGMA3,Tegma ON,ACAO
 TIMS3,TIM ON,ACAO
 TOTS3,Totvs ON,ACAO
-TRPL4,CTEEP PN,ACAO
 TTEN3,3Tentos Agroindustrial ON,ACAO
 TUPY3,Tupy ON,ACAO
 UGPA3,Ultrapar ON,ACAO
@@ -148,7 +128,6 @@ VAMO3,Vamos Locação ON,ACAO
 VBBR3,Vibra Energia ON,ACAO
 VIVA3,Vivara ON,ACAO
 VIVT3,Telefônica Brasil ON,ACAO
-VIVT4,Telefônica Brasil PN,ACAO
 VULC3,Vulcabras Azaleia ON,ACAO
 WEGE3,WEG ON,ACAO
 YDUQ3,Yduqs Participações ON,ACAO
@@ -182,7 +161,6 @@ HGRU11,CSHG Renda Urbana FII,FII
 JSRE11,JS Real Estate FII,FII
 KNCR11,Kinea Crédito Privado FII,FII
 KNRI11,Kinea Renda Imobiliária FII,FII
-MALL11,Malls Brasil Plural FII,FII
 MXRF11,Maxi Renda FII,FII
 PVBI11,VBI Prime Properties FII,FII
 RBRF11,RBR Alpha FII,FII
