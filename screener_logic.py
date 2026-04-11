@@ -260,35 +260,118 @@ def calculate_fibonacci(start_price: float, end_price: float) -> dict:
     return levels
 
 
-def find_order_blocks(df: pd.DataFrame, start_idx: int, end_idx: int, direction: str) -> pd.DataFrame:
-    """Encontra os últimos Order Blocks institucionais APENAS dentro da pernada definida."""
-    blocks = []
-    # O OB verdadeiro frequentemente ocorre de 1 a 5 candles ANTES do efetivo topo/fundo extremo
-    search_start = max(0, start_idx - 5)
-    end_idx = min(len(df)-1, max(start_idx+1, end_idx))
-    
-    for i in range(search_start, end_idx):
+def find_validated_ob(df: pd.DataFrame, extreme_idx: int, bos_idx: int, direction: str) -> dict:
+    """
+    Encontra o Order Block (OB) institucional validado conforme SMC rigoroso.
+
+    ── Definição ──────────────────────────────────────────────────────────────
+    • Bullish OB: Última vela bearish (vermelha) ANTES do Strong Low —
+      representa a última distribuição institucional antes da reversão de alta.
+    • Bearish OB: Última vela bullish (verde) ANTES do Strong High —
+      representa a última acumulação institucional antes da reversão de baixa.
+
+    ── Critérios de Validação (TODOS obrigatórios) ───────────────────────────
+    1. Displacement: Ao menos 1 vela pós-extremo com corpo ≥ 55 % do range
+       total e na direção correta (prova de força institucional).
+    2. FVG (Fair Value Gap): Gap de preço no impulso logo após o extremo,
+       confirmando desequilíbrio real entre oferta/demanda.
+    3. BOS: Já confirmado pelo caller (detect_smc_signals).
+
+    ── Ponto de Entrada ──────────────────────────────────────────────────────
+    Mean Threshold (MT) = 50 % da vela do OB = (High + Low) / 2
+    Nível refinado defendido por instituições com extremo rigor.
+
+    Args:
+        df:           DataFrame com dados OHLCV + colunas estruturais
+        extreme_idx:  Índice do Strong Low (bull) ou Strong High (bear)
+        bos_idx:      Índice do candle que gerou o BOS/CHOCH
+        direction:    'bull' ou 'bear'
+
+    Returns:
+        dict {'idx', 'high', 'low', 'mt'} do OB validado, ou None.
+    """
+    LOOKBACK     = 15    # Candles máximos para trás a partir do extremo
+    DISP_RATIO   = 0.55  # Corpo mínimo como % do range para displacement
+    DISP_WINDOW  = 8     # Candles após extremo para verificar displacement
+    FVG_WINDOW   = 15    # Candles após extremo para verificar FVG
+
+    search_start = max(0, extreme_idx - LOOKBACK)
+
+    # ── 1. Localizar o candle OB (última vela de cor OPOSTA ao impulso) ─────
+    ob_idx = None
+
+    if direction == 'bull':
+        # Bullish OB = última vela VERMELHA antes do Strong Low
+        for j in range(extreme_idx, search_start - 1, -1):
+            if j < 0 or j >= len(df):
+                continue
+            if df.loc[j, 'Close'] < df.loc[j, 'Open']:
+                ob_idx = j
+                break
+    else:
+        # Bearish OB = última vela VERDE antes do Strong High
+        for j in range(extreme_idx, search_start - 1, -1):
+            if j < 0 or j >= len(df):
+                continue
+            if df.loc[j, 'Close'] > df.loc[j, 'Open']:
+                ob_idx = j
+                break
+
+    if ob_idx is None:
+        return None
+
+    # ── 2. Validar DISPLACEMENT (velas impulsivas após o extremo) ───────────
+    disp_end = min(extreme_idx + DISP_WINDOW + 1, bos_idx + 1, len(df))
+    displacement_ok = False
+
+    for k in range(extreme_idx + 1, disp_end):
+        body  = abs(df.loc[k, 'Close'] - df.loc[k, 'Open'])
+        total = df.loc[k, 'High'] - df.loc[k, 'Low']
+        if total <= 0:
+            continue
+
         if direction == 'bull':
-            # OB bullish = ultimos candles vermelhos acumulativos antes do empurrão
-            if df.loc[i, 'Close'] < df.loc[i, 'Open']:
-                blocks.append({
-                    'idx': i,
-                    'high': df.loc[i, 'High'],
-                    'low': df.loc[i, 'Low'],
-                    'close': df.loc[i, 'Close'],
-                    'color': 'bearish'
-                })
+            is_impulse = df.loc[k, 'Close'] > df.loc[k, 'Open']   # Verde forte
         else:
-            # OB bearish = últimos candles verdes acumulativos antes do drop
-            if df.loc[i, 'Close'] > df.loc[i, 'Open']:
-                blocks.append({
-                    'idx': i,
-                    'high': df.loc[i, 'High'],
-                    'low': df.loc[i, 'Low'],
-                    'close': df.loc[i, 'Close'],
-                    'color': 'bullish'
-                })
-    return pd.DataFrame(blocks)
+            is_impulse = df.loc[k, 'Close'] < df.loc[k, 'Open']   # Vermelho forte
+
+        if is_impulse and (body / total) >= DISP_RATIO:
+            displacement_ok = True
+            break
+
+    if not displacement_ok:
+        return None
+
+    # ── 3. Validar FVG (Fair Value Gap no impulso pós-extremo) ──────────────
+    fvg_end = min(extreme_idx + FVG_WINDOW + 1, bos_idx + 1, len(df) - 1)
+    fvg_ok = False
+
+    for k in range(extreme_idx + 1, fvg_end):
+        if k < 1 or k >= len(df) - 1:
+            continue
+        if direction == 'bull':
+            # FVG Bullish: High da vela anterior < Low da vela seguinte (gap ascendente)
+            if df.loc[k - 1, 'High'] < df.loc[k + 1, 'Low']:
+                fvg_ok = True
+                break
+        else:
+            # FVG Bearish: Low da vela anterior > High da vela seguinte (gap descendente)
+            if df.loc[k - 1, 'Low'] > df.loc[k + 1, 'High']:
+                fvg_ok = True
+                break
+
+    if not fvg_ok:
+        return None
+
+    # ── 4. OB Validado — calcular Mean Threshold ───────────────────────────
+    mt = (df.loc[ob_idx, 'High'] + df.loc[ob_idx, 'Low']) / 2
+
+    return {
+        'idx':  ob_idx,
+        'high': float(df.loc[ob_idx, 'High']),
+        'low':  float(df.loc[ob_idx, 'Low']),
+        'mt':   round(float(mt), 2),       # Mean Threshold — ponto de entrada
+    }
 
 
 def find_fvg(df: pd.DataFrame, start_idx: int, end_idx: int) -> list:
@@ -383,35 +466,28 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
 
             fib = calculate_fibonacci(sl_val, top_val)
             fib_50 = fib['0.5']
-            
-            order_blocks = find_order_blocks(df, sl_idx, top_idx, signal_dir)
-            fvgs = find_fvg(df, sl_idx, top_idx)
-            
+
+            # ── POI: Cascata de prioridade SMC ──────────────────────────────
             poi_price = None
             poi_type = None
 
-            # Condição SMC: O POI M-U-S-T estar na zona Discount (< 50%) para compras.
-            # O OB Extremo para BULL = último candle VERMELHO que antecede imediatamente o Strong Low.
-            # Escaneamos para trás a partir do fundo forte para encontrar o candle institucional causal.
-            if not order_blocks.empty:
-                discount_obs = order_blocks[order_blocks['low'] < fib_50]
-                if not discount_obs.empty:
-                    # Filtrar apenas OBs próximos do Strong Low (dentro de 10 candles)
-                    near_sl = discount_obs[abs(discount_obs['idx'] - sl_idx) <= 10]
-                    if not near_sl.empty:
-                        ob = near_sl.iloc[-1]  # O mais próximo do fundo
-                    else:
-                        ob = discount_obs.iloc[-1]  # Fallback: último discount
-                    poi_price = ob['high']  # Aresta proximal
-                    poi_type = 'OB Extremo'
+            # 1) Order Block validado (Displacement + FVG + BOS)
+            #    Entrada no Mean Threshold (50% da vela do OB)
+            ob = find_validated_ob(df, sl_idx, i, 'bull')
+            if ob is not None and ob['mt'] < fib_50:  # OB deve estar na Discount
+                poi_price = ob['mt']
+                poi_type = 'OB (MT)'
 
+            # 2) Fallback: FVG na zona Discount
             if poi_price is None:
+                fvgs = find_fvg(df, sl_idx, top_idx)
                 for fvg in reversed(fvgs):
-                    if fvg['type'] == 'bullish' and fvg['top'] < fib_50:
-                        poi_price = fvg['top']
-                        poi_type = 'FVG Extremo'
+                    if fvg['type'] == 'bullish' and fvg['mid'] < fib_50:
+                        poi_price = fvg['mid']
+                        poi_type = 'FVG'
                         break
 
+            # 3) Fallback final: Fibonacci 50%
             if poi_price is None:
                 poi_price = fib_50
                 poi_type = 'Fib 50%'
@@ -440,35 +516,28 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
 
             fib = calculate_fibonacci(sh_val, bot_val)
             fib_50 = fib['0.5']
-            
-            order_blocks = find_order_blocks(df, sh_idx, bot_idx, signal_dir)
-            fvgs = find_fvg(df, sh_idx, bot_idx)
-            
+
+            # ── POI: Cascata de prioridade SMC ──────────────────────────────
             poi_price = None
             poi_type = None
 
-            # Condição SMC: O POI tem que estar Premium (> 50%) para vendas.
-            # O OB Extremo para BEAR = último candle VERDE que antecede imediatamente o Strong High.
-            # Escaneamos próximo do topo forte para encontrar o candle institucional causal.
-            if not order_blocks.empty:
-                premium_obs = order_blocks[order_blocks['high'] > fib_50]
-                if not premium_obs.empty:
-                    # Filtrar apenas OBs próximos do Strong High (dentro de 10 candles)
-                    near_sh = premium_obs[abs(premium_obs['idx'] - sh_idx) <= 10]
-                    if not near_sh.empty:
-                        ob = near_sh.iloc[-1]  # O mais próximo do topo
-                    else:
-                        ob = premium_obs.iloc[0]  # Fallback: primeiro premium (mais alto)
-                    poi_price = ob['low']  # Aresta proximal
-                    poi_type = 'OB Extremo'
+            # 1) Order Block validado (Displacement + FVG + BOS)
+            #    Entrada no Mean Threshold (50% da vela do OB)
+            ob = find_validated_ob(df, sh_idx, i, 'bear')
+            if ob is not None and ob['mt'] > fib_50:  # OB deve estar na Premium
+                poi_price = ob['mt']
+                poi_type = 'OB (MT)'
 
+            # 2) Fallback: FVG na zona Premium
             if poi_price is None:
+                fvgs = find_fvg(df, sh_idx, bot_idx)
                 for fvg in reversed(fvgs):
-                    if fvg['type'] == 'bearish' and fvg['bottom'] > fib_50:
-                        poi_price = fvg['bottom']
-                        poi_type = 'FVG Extremo'
+                    if fvg['type'] == 'bearish' and fvg['mid'] > fib_50:
+                        poi_price = fvg['mid']
+                        poi_type = 'FVG'
                         break
 
+            # 3) Fallback final: Fibonacci 50%
             if poi_price is None:
                 poi_price = fib_50
                 poi_type = 'Fib 50%'
