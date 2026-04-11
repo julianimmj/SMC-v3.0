@@ -288,62 +288,59 @@ def find_validated_ob(df: pd.DataFrame, extreme_idx: int, bos_idx: int, directio
     Returns:
         dict {'idx', 'high', 'low', 'mt'} do OB validado, ou None.
     """
-    DISP_RATIO   = 0.50  # Corpo mínimo como % do range para displacement
-    DISP_WINDOW  = 8     # Candles após extremo para verificar displacement
-    FVG_WINDOW   = 15    # Candles após extremo para verificar FVG
+    DISP_RATIO   = 0.50  
+    GAP_THRESHOLD = 0.004
 
-    # ── 1. O OB é a vela no PONTO EXTREMO (o pico ou fundo institucional) ───
     ob_idx = extreme_idx
-    if ob_idx < 0 or ob_idx >= len(df):
-        return None
-
-    # ── 2. Validar DISPLACEMENT (velas impulsivas após o extremo) ───────────
-    #    O preço deve sair da zona com velas de corpo longo e sombras mínimas,
-    #    provando força institucional.
-    disp_end = min(extreme_idx + DISP_WINDOW + 1, bos_idx + 1, len(df))
-    displacement_ok = False
-
-    for k in range(extreme_idx + 1, disp_end):
-        body  = abs(df.loc[k, 'Close'] - df.loc[k, 'Open'])
+    impulse_idx = None
+    
+    # ── 1. Encontrar o início da "queda forte" (ou alta)
+    for k in range(extreme_idx, bos_idx + 1):
+        if k >= len(df): break
+            
+        body = abs(df.loc[k, 'Close'] - df.loc[k, 'Open'])
         total = df.loc[k, 'High'] - df.loc[k, 'Low']
-        if total <= 0:
-            continue
-
-        if direction == 'bull':
-            is_impulse = df.loc[k, 'Close'] > df.loc[k, 'Open']   # Verde forte
-        else:
-            is_impulse = df.loc[k, 'Close'] < df.loc[k, 'Open']   # Vermelho forte
-
-        if is_impulse and (body / total) >= DISP_RATIO:
-            displacement_ok = True
+        
+        is_gap = False
+        if k > 0:
+            prev_close = df.loc[k-1, 'Close']
+            if direction == 'bull':
+                if df.loc[k, 'Open'] > prev_close * (1 + GAP_THRESHOLD): is_gap = True
+            else:
+                if df.loc[k, 'Open'] < prev_close * (1 - GAP_THRESHOLD): is_gap = True
+                
+        is_impulse = False
+        if total > 0 and (body / total) >= DISP_RATIO:
+            if direction == 'bull' and df.loc[k, 'Close'] > df.loc[k, 'Open']:
+                is_impulse = True
+            elif direction == 'bear' and df.loc[k, 'Close'] < df.loc[k, 'Open']:
+                is_impulse = True
+                
+        if is_impulse or is_gap:
+            impulse_idx = k
             break
-
-    if not displacement_ok:
+            
+    if impulse_idx is not None:
+        # A última vela antes da queda/alta forte
+        ob_idx = max(extreme_idx, impulse_idx - 1)
+        
+        # Validar se essa perna de impulso formou um FVG real
+        fvg_ok = False
+        fvg_end = min(bos_idx + 2, impulse_idx + 10, len(df))
+        for i in range(impulse_idx, fvg_end):
+            if i < 1 or i >= len(df) - 1: continue
+            if direction == 'bull':
+                if df.loc[i-1, 'High'] < df.loc[i+1, 'Low']: fvg_ok = True
+            else:
+                if df.loc[i-1, 'Low'] > df.loc[i+1, 'High']: fvg_ok = True
+            if fvg_ok: break
+            
+        if not fvg_ok:
+            return None
+    else:
+        # Se não houver impulso óbvio, falha a validação SMC rigorosa
         return None
 
-    # ── 3. Validar FVG (Fair Value Gap no impulso pós-extremo) ──────────────
-    #    O movimento deve deixar um "vazio" de preço logo após o bloco.
-    fvg_end = min(extreme_idx + FVG_WINDOW + 1, bos_idx + 1, len(df) - 1)
-    fvg_ok = False
-
-    for k in range(extreme_idx + 1, fvg_end):
-        if k < 1 or k >= len(df) - 1:
-            continue
-        if direction == 'bull':
-            # FVG Bullish: High[k-1] < Low[k+1] (gap ascendente)
-            if df.loc[k - 1, 'High'] < df.loc[k + 1, 'Low']:
-                fvg_ok = True
-                break
-        else:
-            # FVG Bearish: Low[k-1] > High[k+1] (gap descendente)
-            if df.loc[k - 1, 'Low'] > df.loc[k + 1, 'High']:
-                fvg_ok = True
-                break
-
-    if not fvg_ok:
-        return None
-
-    # ── 4. OB Validado — calcular Mean Threshold ───────────────────────────
     mt = (df.loc[ob_idx, 'High'] + df.loc[ob_idx, 'Low']) / 2
 
     return {
