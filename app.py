@@ -825,6 +825,12 @@ def screener_page():
                   key="min_rr", label_visibility="collapsed")
 
         st.divider()
+        st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Dist. Máx. ao POI</div>", unsafe_allow_html=True)
+        st.slider("Dist. Máx. POI", min_value=5, max_value=50, value=15, step=5,
+                  key="max_dist_poi", label_visibility="collapsed",
+                  help="Exibe apenas ativos cujo preço atual está a no máximo X% do ponto de entrada (POI)")
+
+        st.divider()
         st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>📋 Execução MTF</div>", unsafe_allow_html=True)
         st.markdown("""
         <div class="mtf-note" style="font-size:0.77rem;">
@@ -930,6 +936,12 @@ def screener_page():
     if filter_zone != 'Todas':
         zm = {'Discount': 'discount', 'Premium': 'premium', 'Reversal': 'reversal'}
         filtered = filtered[filtered['Zona'] == zm.get(filter_zone, filter_zone)]
+
+    # Filtro de distância máxima ao POI
+    max_dist = st.session_state.get('max_dist_poi', 15)
+    if 'Dist. POI' in filtered.columns and not filtered.empty:
+        dist_abs = filtered['Dist. POI'].str.replace('%', '', regex=False).str.replace('+', '', regex=False).astype(float).abs()
+        filtered = filtered[dist_abs <= max_dist]
 
     # ─── TABELA DE RESULTADOS ───────────────────────────────────────────────────────
     if filtered.empty:
