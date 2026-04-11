@@ -391,20 +391,24 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
             poi_type = None
 
             # Condição SMC: O POI M-U-S-T estar na zona Discount (< 50%) para compras.
+            # O OB Extremo para BULL = último candle VERMELHO que antecede imediatamente o Strong Low.
+            # Escaneamos para trás a partir do fundo forte para encontrar o candle institucional causal.
             if not order_blocks.empty:
                 discount_obs = order_blocks[order_blocks['low'] < fib_50]
                 if not discount_obs.empty:
-                    # Usa o Order Block Extremo (o primeiro da base do movimento) para maior segurança
-                    ob = discount_obs.iloc[0]
-                    # POI é a máxima do candle (aresta proximal que o preço toca primeiro antes dos 50%)
-                    poi_price = ob['high']
+                    # Filtrar apenas OBs próximos do Strong Low (dentro de 10 candles)
+                    near_sl = discount_obs[abs(discount_obs['idx'] - sl_idx) <= 10]
+                    if not near_sl.empty:
+                        ob = near_sl.iloc[-1]  # O mais próximo do fundo
+                    else:
+                        ob = discount_obs.iloc[-1]  # Fallback: último discount
+                    poi_price = ob['high']  # Aresta proximal
                     poi_type = 'OB Extremo'
 
             if poi_price is None:
-                # Usa o FVG Extremo (o primeiro da base do movimento)
-                for fvg in fvgs:
+                for fvg in reversed(fvgs):
                     if fvg['type'] == 'bullish' and fvg['top'] < fib_50:
-                        poi_price = fvg['top']  # Aresta proximal do FVG
+                        poi_price = fvg['top']
                         poi_type = 'FVG Extremo'
                         break
 
@@ -444,19 +448,24 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
             poi_type = None
 
             # Condição SMC: O POI tem que estar Premium (> 50%) para vendas.
+            # O OB Extremo para BEAR = último candle VERDE que antecede imediatamente o Strong High.
+            # Escaneamos próximo do topo forte para encontrar o candle institucional causal.
             if not order_blocks.empty:
                 premium_obs = order_blocks[order_blocks['high'] > fib_50]
                 if not premium_obs.empty:
-                    # Usa o Order Block Extremo (o primeiro do topo do movimento) para maior segurança
-                    ob = premium_obs.iloc[0]
-                    # POI é a mínima do candle (aresta proximal)
-                    poi_price = ob['low']
+                    # Filtrar apenas OBs próximos do Strong High (dentro de 10 candles)
+                    near_sh = premium_obs[abs(premium_obs['idx'] - sh_idx) <= 10]
+                    if not near_sh.empty:
+                        ob = near_sh.iloc[-1]  # O mais próximo do topo
+                    else:
+                        ob = premium_obs.iloc[0]  # Fallback: primeiro premium (mais alto)
+                    poi_price = ob['low']  # Aresta proximal
                     poi_type = 'OB Extremo'
 
             if poi_price is None:
-                for fvg in fvgs:
+                for fvg in reversed(fvgs):
                     if fvg['type'] == 'bearish' and fvg['bottom'] > fib_50:
-                        poi_price = fvg['bottom'] # Aresta proximal do FVG
+                        poi_price = fvg['bottom']
                         poi_type = 'FVG Extremo'
                         break
 
