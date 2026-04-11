@@ -4,6 +4,7 @@ Screener Institucional para Ações da B3 com lógica SMC (Smart Money Concepts)
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -13,7 +14,7 @@ import datetime
 from screener_logic import run_screener, detect_smc_signals
 
 # ─── Keep-Alive: impede o Streamlit Cloud de adormecer enquanto o usuário está na página
-st.html("""
+components.html("""
 <script>
 (function keepAlive() {
     setInterval(function() {
