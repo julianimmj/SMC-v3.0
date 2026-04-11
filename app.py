@@ -11,6 +11,9 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import datetime
 
+import importlib
+import screener_logic
+importlib.reload(screener_logic)
 from screener_logic import run_screener, detect_smc_signals
 
 # ─── Keep-Alive: impede o Streamlit Cloud de adormecer enquanto o usuário está na página
