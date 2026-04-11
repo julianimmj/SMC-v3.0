@@ -692,6 +692,8 @@ def build_chart(df: pd.DataFrame, ticker: str, trade_info: dict = None) -> go.Fi
     fig.add_trace(go.Bar(x=x_axis, y=df_plot['Volume'], name='Volume',
                          marker_color=colors_vol, opacity=0.55), row=2, col=1)
 
+    # Apenas os BOS/CHOCH dos últimos 60 candles visíveis (evita poluição de sinais antigos)
+    recent_start = max(0, len(df_plot) - 60)
     for col_name, label, color, dash in [
         ('bos_bull',   'BOS ▲',   'rgba(16,217,160,0.65)', 'dash'),
         ('bos_bear',   'BOS ▼',   'rgba(244,67,108,0.65)', 'dash'),
@@ -699,7 +701,8 @@ def build_chart(df: pd.DataFrame, ticker: str, trade_info: dict = None) -> go.Fi
         ('choch_bear', 'CHOCH ▼', 'rgba(167,139,250,0.8)', 'dot'),
     ]:
         if col_name in df_plot.columns:
-            for idx in df_plot[df_plot[col_name] == True].index:
+            events = df_plot[(df_plot[col_name] == True) & (df_plot.index >= recent_start)]
+            for idx in events.index:
                 x_val = x_axis[idx]
                 fig.add_shape(type="line", x0=x_val, x1=x_val, y0=0, y1=1, xref='x', yref='paper',
                               line=dict(color=color, width=1.5, dash=dash))
@@ -707,7 +710,7 @@ def build_chart(df: pd.DataFrame, ticker: str, trade_info: dict = None) -> go.Fi
                                    showarrow=False, font=dict(color=color, size=10))
 
     if 'bull_sweep' in df_plot.columns:
-        sw = df_plot[df_plot['bull_sweep'] == True]
+        sw = df_plot[(df_plot['bull_sweep'] == True) & (df_plot.index >= recent_start)]
         if not sw.empty:
             fig.add_trace(go.Scatter(
                 x=[x_axis[i] for i in sw.index], y=sw['Low'] * 0.9975,
@@ -715,40 +718,54 @@ def build_chart(df: pd.DataFrame, ticker: str, trade_info: dict = None) -> go.Fi
                 name='Bull Sweep'), row=1, col=1)
 
     if 'bear_sweep' in df_plot.columns:
-        sw = df_plot[df_plot['bear_sweep'] == True]
+        sw = df_plot[(df_plot['bear_sweep'] == True) & (df_plot.index >= recent_start)]
         if not sw.empty:
             fig.add_trace(go.Scatter(
                 x=[x_axis[i] for i in sw.index], y=sw['High'] * 1.0025,
                 mode='markers', marker=dict(symbol='triangle-down', size=9, color='#f4436c'),
                 name='Bear Sweep'), row=1, col=1)
 
+    # Apenas o ÚLTIMO strong_low e strong_high ativos (não todos os históricos)
     if 'strong_low' in df_plot.columns:
-        for _, r in df_plot[df_plot['strong_low'] == True].iterrows():
-            fig.add_hline(y=r['Low'], line_width=1, line_dash='dot',
-                          line_color='rgba(16,217,160,0.3)')
+        sl_rows = df_plot[df_plot['strong_low'] == True]
+        if not sl_rows.empty:
+            last_sl = sl_rows.iloc[-1]
+            fig.add_hline(y=last_sl['Low'], line_width=1, line_dash='dot',
+                          line_color='rgba(16,217,160,0.4)',
+                          annotation_text=f" Strong Low ({last_sl['Low']:.2f})",
+                          annotation_position="bottom right",
+                          annotation_font=dict(color='rgba(16,217,160,0.6)', size=9))
 
     if 'strong_high' in df_plot.columns:
-        for _, r in df_plot[df_plot['strong_high'] == True].iterrows():
-            fig.add_hline(y=r['High'], line_width=1, line_dash='dot',
-                          line_color='rgba(244,67,108,0.3)')
+        sh_rows = df_plot[df_plot['strong_high'] == True]
+        if not sh_rows.empty:
+            last_sh = sh_rows.iloc[-1]
+            fig.add_hline(y=last_sh['High'], line_width=1, line_dash='dot',
+                          line_color='rgba(244,67,108,0.4)',
+                          annotation_text=f" Strong High ({last_sh['High']:.2f})",
+                          annotation_position="top right",
+                          annotation_font=dict(color='rgba(244,67,108,0.6)', size=9))
 
     if trade_info:
         entry = trade_info.get('entry')
         sl = trade_info.get('sl')
         tp = trade_info.get('tp')
+        signal_dir = trade_info.get('signal', 'bull')
+        
         # Invisible points to force Plotly to scale the Y-axis to include SL and TP
         last_x = x_axis.iloc[-1] if hasattr(x_axis, 'iloc') else x_axis[-1]
         fig.add_trace(go.Scatter(x=[last_x, last_x], y=[sl, tp], mode='markers', 
                                  marker=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'), row=1, col=1)
         
+        entry_label = "⏳ Entrada POI" if signal_dir == 'bull' else "⏳ Entrada POI"
         fig.add_hline(y=entry, line_width=1.5, line_dash='dashdot', line_color='#4f8ef7',
-                      annotation_text=f" Entrada ({entry:.2f})", annotation_position="top left",
+                      annotation_text=f" {entry_label} ({entry:.2f})", annotation_position="top left",
                       annotation_font=dict(color='#4f8ef7', size=11, family='Inter'))
         fig.add_hline(y=sl, line_width=1.5, line_color='#f4436c',
-                      annotation_text=f" Stop Loss ({sl:.2f})", annotation_position="bottom left",
+                      annotation_text=f" 🛑 Stop Loss ({sl:.2f})", annotation_position="bottom left",
                       annotation_font=dict(color='#f4436c', size=11, family='Inter'))
         fig.add_hline(y=tp, line_width=1.5, line_color='#10d9a0',
-                      annotation_text=f" Alvo ({tp:.2f})", annotation_position="top left",
+                      annotation_text=f" 🎯 Alvo ({tp:.2f})", annotation_position="top left",
                       annotation_font=dict(color='#10d9a0', size=11, family='Inter'))
 
     fig.update_layout(
