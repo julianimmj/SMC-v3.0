@@ -410,7 +410,9 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
                 poi_type = 'Fib 50%'
 
             sl_price = sl_val * 0.999 # O SL é matemático abaixo do fundo forte
-            tp1_price = top_val # TP é o Equal-High/Weak-High garantido, o ápice
+            # TP projeta ACIMA do topo atual via Fibonacci -0.272 extension
+            fib_range = top_val - sl_val
+            tp1_price = top_val + fib_range * 0.272  # ~27% além do topo
             
         # == Cenário VENDA ==
         else: 
@@ -458,7 +460,9 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
                 poi_type = 'Fib 50%'
 
             sl_price = sh_val * 1.001 # Protegido de liquidação acidental no High
-            tp1_price = bot_val
+            # TP projeta ABAIXO do fundo atual via Fibonacci -0.272 extension
+            fib_range = sh_val - bot_val
+            tp1_price = bot_val - fib_range * 0.272  # ~27% além do fundo
 
         # Atribuição da Zona com base no preço DE HOJE
         current_price = df.loc[i, 'Close']
@@ -532,14 +536,16 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
 
                     if latest['signal'] == 'bull':
                         if poi <= sl: continue # Protecao matemática 
-                        if df.loc[signal_idx:, 'Low'].min() <= sl: continue # Stop-Out: Setup Falhou
-                        if df.loc[signal_idx:, 'High'].max() >= tp1: continue # Target-Hit: Setup já concluiu
+                        if df.loc[signal_idx:, 'Low'].min() <= sl * 1.005: continue # Stop-Out (0.5% tolerância)
+                        if df.loc[signal_idx:, 'High'].max() >= tp1 * 0.995: continue # Target-Hit (0.5% tolerância)
+                        if last_close >= tp1: continue  # Preço atual já superou o alvo
                         risk = abs(poi - sl)
                         reward = abs(tp1 - poi)
                     else: # bear
                         if poi >= sl: continue
-                        if df.loc[signal_idx:, 'High'].max() >= sl: continue # Stop-Out: Setup Falhou
-                        if df.loc[signal_idx:, 'Low'].min() <= tp1: continue # Target-Hit: Setup já concluiu
+                        if df.loc[signal_idx:, 'High'].max() >= sl * 0.995: continue # Stop-Out (0.5% tolerância)
+                        if df.loc[signal_idx:, 'Low'].min() <= tp1 * 1.005: continue # Target-Hit (0.5% tolerância)
+                        if last_close <= tp1: continue  # Preço atual já estourou o alvo
                         risk = abs(sl - poi)
                         reward = abs(poi - tp1)
 
