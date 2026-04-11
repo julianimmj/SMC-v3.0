@@ -422,6 +422,10 @@ if 'active_tab' not in st.session_state:
     st.session_state.active_tab = 'all'
 if 'filter_zone' not in st.session_state:
     st.session_state.filter_zone = 'Todas'
+if 'max_dist_poi' not in st.session_state:
+    st.session_state.max_dist_poi = 15
+if 'min_rr' not in st.session_state:
+    st.session_state.min_rr = 0.0
 
 
 # ─── Landing Page ────────────────────────────────────────────────────────────────

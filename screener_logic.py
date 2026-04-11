@@ -562,6 +562,12 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
                     else:
                         zone = latest.get('zone')
 
+                    # Regra SMC: Bull SÓ em Discount, Bear SÓ em Premium
+                    if latest['signal'] == 'bull' and zone != 'discount':
+                        continue  # Preço está caro demais para comprar
+                    if latest['signal'] == 'bear' and zone != 'premium':
+                        continue  # Preço está barato demais para vender
+
                     # Distância do preço atual ao POI (%)
                     dist_poi = round(((last_close - poi) / poi) * 100, 1)
 
