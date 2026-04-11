@@ -1,1 +1,7 @@
-Ticker,Sinal,Tipo,Preço,POI,POI Preço,Zona,SL,TP1,RR,Nota MTF
+Ticker,Sinal,Tipo,Preço,POI,POI Preço,Zona,SL,TP1,RR,Dist. POI,Nota MTF
+PVBI11,bear,BOS,78.12,Fib 50%,77.82,premium,80.27,74.16,1.49,+0.4%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+AGRO3,bull,BOS,20.43,OB Extremo,19.0,discount,18.57,23.6,10.7,+7.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+ROXO34,bull,CHOCH,12.65,OB Extremo,12.68,discount,10.77,17.88,2.72,-0.2%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+IGTI11,bear,BOS,29.18,OB Extremo,29.32,premium,30.16,24.93,5.23,-0.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+CPFE3,bear,BOS,53.81,OB Extremo,49.54,premium,56.4,42.58,1.01,+8.6%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+KEPL3,bull,CHOCH,8.25,OB Extremo,6.72,discount,6.57,11.5,31.87,+22.8%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
