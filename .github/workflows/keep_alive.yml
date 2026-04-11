@@ -1,0 +1,27 @@
+name: Keep Alive - Prevent Streamlit Sleep
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'  # A cada 4 horas (6x/dia — dentro do limite free do GitHub)
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping Streamlit App
+        run: |
+          APP_URL="https://smc-v30.streamlit.app/"
+          echo "Pinging $APP_URL ..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$APP_URL")
+          echo "Response: HTTP $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "✅ App is alive."
+          else
+            echo "⚠️ App returned $STATUS — may be waking up."
+            # Retry after 30s to fully wake it
+            sleep 30
+            STATUS2=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$APP_URL")
+            echo "Retry response: HTTP $STATUS2"
+          fi

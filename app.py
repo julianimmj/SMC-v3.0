@@ -4,6 +4,7 @@ Screener Institucional para Ações da B3 com lógica SMC (Smart Money Concepts)
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -11,6 +12,23 @@ from plotly.subplots import make_subplots
 import datetime
 
 from screener_logic import run_screener, detect_smc_signals
+
+# ─── Keep-Alive: impede o Streamlit Cloud de adormecer enquanto o usuário está na página
+components.html("""
+<script>
+(function keepAlive() {
+    setInterval(function() {
+        fetch(window.location.href, {method: 'HEAD', mode: 'no-cors'}).catch(function(){});
+    }, 300000); // 5 minutos
+})();
+</script>
+""", height=0)
+
+try:
+    _tickers_df = pd.read_csv('tickers_b3.csv')
+    TOTAL_TICKERS = len(_tickers_df)
+except Exception:
+    TOTAL_TICKERS = 177
 
 st.set_page_config(
     page_title="SMC Cloud Screener v3.0",
@@ -426,13 +444,13 @@ def landing_page():
 
     with col_left:
         # Título e descrição em HTML puro — sem padding-left manual
-        st.markdown("""
+        st.markdown(f"""
         <div style="padding: 40px 0 20px 0;">
           <div class="eyebrow">⚡ Smart Money Concepts · Institucional</div>
           <div class="h1">Screener SMC<br><span class="g">para a B3</span></div>
           <span class="ver">v3.0 &nbsp;·&nbsp; Yahoo Finance &nbsp;·&nbsp; Timeframe D1</span>
           <div class="hdesc">
-            Varredura diária de <strong>198 ativos</strong> da B3 — ações, ETFs, BDRs e FIIs —
+            Varredura diária de <strong>{TOTAL_TICKERS} ativos</strong> da B3 — ações, ETFs, BDRs e FIIs —
             com lógica institucional: sweep confirmado, BOS/CHOCH validado, OBs, FVGs e Fibonacci.
           </div>
           <div class="checks">
@@ -445,7 +463,7 @@ def landing_page():
         """, unsafe_allow_html=True)
         
     with col_right:
-        st.markdown("""
+        st.markdown(f"""
         <div style="padding: 40px 0 20px 24px;">
           <div class="panel">
             <div class="pbar">
@@ -460,7 +478,7 @@ def landing_page():
               <div class="prow"><span class="tk">BBDC4</span><span class="st c">CHOCH</span><span class="dr up">▲ Alta</span><span class="zn">🔵 Discount</span></div>
             </div>
             <div class="pfoot">
-              <span>198 ativos verificados</span><span>Ações · ETFs · BDRs · FIIs</span><span>D1 diário</span>
+              <span>{TOTAL_TICKERS} ativos verificados</span><span>Ações · ETFs · BDRs · FIIs</span><span>D1 diário</span>
             </div>
           </div>
         </div>
@@ -478,10 +496,14 @@ def landing_page():
     with bcol_mid2:
         if st.button("⏱️ Ver Último Resultado", key="btn_quick", use_container_width=True):
             try:
-                import pandas as pd
                 df_saved = pd.read_csv("latest_scan.csv")
-                st.session_state.signals_df = df_saved
-            except:
+                if df_saved.empty:
+                    st.toast("⚠️ Nenhum resultado prévio. Execute um novo scan.", icon="⚠️")
+                    st.session_state.signals_df = None
+                else:
+                    st.session_state.signals_df = df_saved
+            except Exception:
+                st.toast("⚠️ Arquivo de resultados não encontrado.", icon="⚠️")
                 st.session_state.signals_df = None
             st.session_state.active_tab = 'all'
             st.session_state.page = 'screener'
@@ -504,50 +526,48 @@ def landing_page():
             email_input = st.text_input("Endereço de E-mail", placeholder="exemplo@gmail.com", label_visibility="collapsed")
             submitted = st.form_submit_button("🔔  Me avisar quando houver sinais", use_container_width=True)
             if submitted and email_input:
+                import json
+                email_added = False
+
+                # Tenta salvar no GitHub (produção)
                 try:
-                    import json
-                    import os
-                    email_added = False
-                    
+                    from github import Github
+                    gh_token = st.secrets["GITHUB_TOKEN"]
+                    g = Github(gh_token)
+                    repo = g.get_repo("julianimmj/SMC-v3.0")
+                    contents = repo.get_contents("emails.json", ref="main")
+                    data_gh = json.loads(contents.decoded_content.decode())
+
+                    if email_input not in data_gh.get("emails", []):
+                        data_gh.setdefault("emails", []).append(email_input)
+                        repo.update_file(contents.path, f"subs: add {email_input}", json.dumps(data_gh, indent=2), contents.sha, branch="main")
+                        email_added = True
+                    else:
+                        st.info("📧 E-mail já está na lista.")
+                except Exception:
+                    # Fallback: salva localmente
                     try:
-                        from github import Github
-                        gh_token = st.secrets["GITHUB_TOKEN"]
-                        g = Github(gh_token)
-                        repo = g.get_repo("julianimmj/SMC-v3.0")
-                        contents = repo.get_contents("emails.json", ref="main")
-                        data_gh = json.loads(contents.decoded_content.decode())
-                        
-                        if email_input not in data_gh.get("emails", []):
-                            data_gh.setdefault("emails", []).append(email_input)
-                            repo.update_file(contents.path, f"subs: add {email_input}", json.dumps(data_gh, indent=2), contents.sha, branch="main")
-                            email_added = True
-                        else:
-                            st.info("E-mail já está na lista.")
-                    except Exception as gh_err:
                         with open("emails.json", "r") as f:
                             data = json.load(f)
-                        
                         if email_input not in data.get("emails", []):
                             data.setdefault("emails", []).append(email_input)
                             with open("emails.json", "w") as f:
                                 json.dump(data, f)
                             email_added = True
                         else:
-                            if not email_added:
-                                st.info("Houve um problema com a Nuvem, mas tentamos local ou já estava listado.")
+                            st.info("📧 E-mail já está na lista.")
+                    except Exception as e:
+                        st.error(f"Erro ao salvar e-mail: {e}")
 
-                    if email_added:
-                        st.success("✅ E-mail cadastrado com sucesso! Te avisaremos do próximo setup.")
-                        
-                except Exception as e:
-                    st.error(f"Erro interno: {e}")
+                if email_added:
+                    st.success("✅ E-mail cadastrado com sucesso! Te avisaremos do próximo setup.")
                     
     st.markdown("<div style='height: 60px;'></div>", unsafe_allow_html=True)
 
     # ── Stats bar compacta ────────────────────────────────────────────────────────
     col_s1, col_s2, col_s3, col_s4 = st.columns(4)
     with col_s1:
-        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">198</span><div class="slbl">Ativos</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">{TOTAL_TICKERS}</span><div class="slbl">Ativos</div></div>', unsafe_allow_html=True)
     with col_s2:
         st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">D1</span><div class="slbl">Timeframe</div></div>', unsafe_allow_html=True)
     with col_s3:
@@ -830,7 +850,7 @@ def screener_page():
 
     # ─── CARREGAMENTO DE DADOS ──────────────────────────────────────────────────────
     if st.session_state.signals_df is None:
-        with st.spinner("🔍 Varrendo 198 ativos (Ações · ETFs · BDRs · FIIs)... Aguarde (1-3 minutos)"):
+        with st.spinner(f"🔍 Varrendo {TOTAL_TICKERS} ativos (Ações · ETFs · BDRs · FIIs)... Aguarde (1-3 minutos)"):
             try:
                 signals = run_screener('tickers_b3.csv')
                 st.session_state.signals_df = signals
@@ -937,6 +957,7 @@ def screener_page():
                 "SL":        st.column_config.NumberColumn("Stop Loss", format="R$%.2f", width="small"),
                 "TP1":       st.column_config.NumberColumn("Alvo",      format="R$%.2f", width="small"),
                 "RR":        st.column_config.NumberColumn("RR",        format="%.2fx",  width="small"),
+                "Dist. POI": st.column_config.TextColumn("Dist. POI",  width="small"),
             }
         )
 
@@ -961,7 +982,7 @@ def screener_page():
 
                     mtf_row = filtered[filtered['Ticker'] == selected_ticker].iloc[0]
                     trade_info = {
-                        'entry': float(mtf_row['Preço']),
+                        'entry': float(mtf_row['POI Preço']),
                         'sl':    float(mtf_row['SL']),
                         'tp':    float(mtf_row['TP1'])
                     }

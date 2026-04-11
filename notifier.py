@@ -49,7 +49,7 @@ def send_alert_email(df_signals: pd.DataFrame, subscriber_emails: list, sender_e
                 <p style="font-size: 16px; color:#c6c6d3; line-height:1.6;">
                     Olá TRADER,<br><br>
                     O nosso algoritmo de <em>Smart Money Concepts</em> isolou 
-                    <strong style="color:var(--accent);">{len(df_signals)} oportunidades</strong> em zonas intocadas durante o scan de hoje ({datetime.datetime.now().strftime('%d/%m')}).
+                    <strong style="color:#4f8ef7;">{len(df_signals)} oportunidades</strong> em zonas intocadas durante o scan de hoje ({datetime.datetime.now().strftime('%d/%m')}).
                 </p>
 
                 <table width="100%" style="border-collapse: collapse; margin-top: 20px; background-color: #07071a; border-radius: 6px;">
@@ -58,7 +58,7 @@ def send_alert_email(df_signals: pd.DataFrame, subscriber_emails: list, sender_e
 
                 <p style="margin-top: 30px; font-size: 12px; color:#8b8baa; text-align:center;">
                     Lembre-se: Desça para timeframes menores (M15) para procurar CHOCH Interno no toque dessas zonas antes de engatilhar seu risco. <br><br>
-                    <a href="https://smcscreener.streamlit.app" style="color:#4f8ef7; text-decoration:none;">Acessar Painel Interativo Completo</a>
+                    <a href="https://smc-v30.streamlit.app/" style="color:#4f8ef7; text-decoration:none;">Acessar Painel Interativo Completo</a>
                 </p>
             </div>
         </div>

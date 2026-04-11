@@ -30,6 +30,8 @@ def download_data_batch(tickers: list, period: str = '2y', interval: str = '1d')
                 df = df_batch[ticker].copy()
             else:
                 df = df_batch.copy()
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = df.columns.get_level_values(0)
             
             df.dropna(inplace=True)
             if df.empty:
@@ -55,9 +57,9 @@ def find_swing_highs_lows(df: pd.DataFrame, window: int = 5) -> pd.DataFrame:
     df = df.copy()
     half = window // 2
 
-    # Use shift-based approach instead of center=True to avoid look-ahead bias
-    rolling_max = df['High'].rolling(window=window).max().shift(-half)
-    rolling_min = df['Low'].rolling(window=window).min().shift(-half)
+    # center=True alinha a janela simetricamente; min_periods evita NaN nos extremos
+    rolling_max = df['High'].rolling(window=window, center=True, min_periods=half + 1).max()
+    rolling_min = df['Low'].rolling(window=window, center=True, min_periods=half + 1).min()
 
     df['swing_high'] = np.where(df['High'] == rolling_max, df['High'], np.nan)
     df['swing_low'] = np.where(df['Low'] == rolling_min, df['Low'], np.nan)
@@ -108,6 +110,7 @@ def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
     df['active_strong_high_idx'] = np.nan
     
     trend = 0  # 1 = Bull, -1 = Bear
+    CANDIDATE_TTL = 60  # Máximo de candles que um candidato permanece válido (~3 meses D1)
     
     recent_high = df['High'].iloc[0]
     recent_low = df['Low'].iloc[0]
@@ -129,20 +132,29 @@ def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
         if cur_low < recent_low:
             recent_low = cur_low
             
+        # Expirar candidatos antigos (TTL)
+        # Quando expira, reseta recent_high/low para evitar acumulação de extremos impossíveis
+        if candidate_low is not None and (i - candidate_low[1]) > CANDIDATE_TTL:
+            candidate_low = None
+            if trend == 0:
+                recent_low = cur_low
+        if candidate_high is not None and (i - candidate_high[1]) > CANDIDATE_TTL:
+            candidate_high = None
+            if trend == 0:
+                recent_high = cur_high
+
         # Avalia varreduras -> Criam candidatos a Pontos Fortes
         if df.loc[i, 'bull_sweep']:
             if candidate_low is None or cur_low < candidate_low[0]:
                 candidate_low = (cur_low, i)
-        else:
-            if candidate_low is not None and cur_low <= candidate_low[0]:
-                candidate_low = (cur_low, i) # Pode renovar se for parte de uma mesma puxada profunda
+        elif candidate_low is not None and cur_low <= candidate_low[0]:
+            candidate_low = (cur_low, i)  # Renova se a puxada continua
 
         if df.loc[i, 'bear_sweep']:
             if candidate_high is None or cur_high > candidate_high[0]:
                 candidate_high = (cur_high, i)
-        else:
-            if candidate_high is not None and cur_high >= candidate_high[0]:
-                candidate_high = (cur_high, i)
+        elif candidate_high is not None and cur_high >= candidate_high[0]:
+            candidate_high = (cur_high, i)
 
         # Valida Quebras Estruturais (apenas Close válido)
         if trend == 1:
@@ -162,7 +174,7 @@ def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
                 strong_low = candidate_low
                 candidate_low = None
                 recent_high = cur_high
-                recent_low = cur_low
+                recent_low = strong_low[0]  # Weak low da nova perna = strong low protegido
                 
         elif trend == -1:
             # CHOCH de Alta: Rompe acima do verdadeiro Strong High ativo
@@ -180,21 +192,34 @@ def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
                 strong_high = candidate_high
                 candidate_high = None
                 recent_low = cur_low
-                recent_high = cur_high
+                recent_high = strong_high[0]  # Weak high da nova perna = strong high protegido
                 
         else: # Estado Inicial -> Esperando a primeira estrutura
-            if cur_close > recent_high and candidate_low is not None:
+            # Na inicialização, aceita rompimento com ou sem candidato para não travar a máquina
+            if cur_close > recent_high:
                 trend = 1
                 df.loc[i, 'choch_bull'] = True
-                strong_low = candidate_low
-                candidate_low = None
+                if candidate_low is not None:
+                    strong_low = candidate_low
+                    candidate_low = None
+                else:
+                    # Fallback: usa o fundo recente como strong low
+                    min_idx = df.loc[:i, 'Low'].idxmin()
+                    strong_low = (df.loc[min_idx, 'Low'], min_idx)
                 recent_high = cur_high
-            elif cur_close < recent_low and candidate_high is not None:
+                recent_low = cur_low
+            elif cur_close < recent_low:
                 trend = -1
                 df.loc[i, 'choch_bear'] = True
-                strong_high = candidate_high
-                candidate_high = None
+                if candidate_high is not None:
+                    strong_high = candidate_high
+                    candidate_high = None
+                else:
+                    # Fallback: usa o topo recente como strong high
+                    max_idx = df.loc[:i, 'High'].idxmax()
+                    strong_high = (df.loc[max_idx, 'High'], max_idx)
                 recent_low = cur_low
+                recent_high = cur_high
 
         # Anexa estado aos frames
         if strong_low is not None:
@@ -298,6 +323,7 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
     df['zone'] = None
     df['sl_price'] = np.nan
     df['tp1_price'] = np.nan
+    df['fib_50'] = np.nan
     df['mtf_note'] = None
     
     # Flags para a visualização do Gráfico no app.py
@@ -335,9 +361,9 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
             # Marca para plotagem correta
             df.loc[sl_idx, 'strong_low'] = True
 
-            # Pegamos como ALVO o ápice do movimento, calculado retroativamente pra fib
-            top_val = df['High'].iloc[sl_idx : len(df)].max()
-            top_idx = df['High'].iloc[sl_idx : len(df)].idxmax()
+            # Ápice do movimento ATÉ o candle do sinal (sem look-ahead)
+            top_val = df['High'].iloc[sl_idx : i + 1].max()
+            top_idx = df['High'].iloc[sl_idx : i + 1].idxmax()
             
             if top_val <= sl_val:
                 continue
@@ -383,9 +409,9 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
             # Marca para plotagem
             df.loc[sh_idx, 'strong_high'] = True
             
-            # Ponto fraco pra ser mitigado
-            bot_val = df['Low'].iloc[sh_idx : len(df)].min()
-            bot_idx = df['Low'].iloc[sh_idx : len(df)].idxmin()
+            # Ponto fraco pra ser mitigado (até o candle do sinal, sem look-ahead)
+            bot_val = df['Low'].iloc[sh_idx : i + 1].min()
+            bot_idx = df['Low'].iloc[sh_idx : i + 1].idxmin()
             
             if bot_val >= sh_val:
                 continue
@@ -435,6 +461,7 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
         df.loc[i, 'zone'] = zone
         df.loc[i, 'sl_price'] = round(float(sl_price), 2)
         df.loc[i, 'tp1_price'] = round(float(tp1_price), 2)
+        df.loc[i, 'fib_50'] = round(float(fib_50), 2)
         df.loc[i, 'mtf_note'] = 'Aguardar CHOCH interno LTF no M15 para confirmar absorção'
 
     df.drop(columns=['active_strong_low_idx', 'active_strong_high_idx', 'active_strong_low', 'active_strong_high'], errors='ignore', inplace=True)
@@ -498,6 +525,20 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
 
                     rr = round(reward / risk, 2) if risk > 0 else 0
 
+                    # Recalcula Zona Fibonacci com o preço de hoje
+                    fib_50_val = latest.get('fib_50')
+                    if pd.notna(fib_50_val):
+                        fib_50_val = float(fib_50_val)
+                        if latest['signal'] == 'bull':
+                            zone = 'discount' if last_close <= fib_50_val else 'premium'
+                        else:
+                            zone = 'premium' if last_close >= fib_50_val else 'discount'
+                    else:
+                        zone = latest.get('zone')
+
+                    # Distância do preço atual ao POI (%)
+                    dist_poi = round(((last_close - poi) / poi) * 100, 1)
+
                     all_signals.append({
                         'Ticker': ticker_clean,
                         'Sinal': latest['signal'],
@@ -505,10 +546,11 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
                         'Preço': round(last_close, 2),
                         'POI': latest.get('poi_type'),
                         'POI Preço': round(float(poi), 2),
-                        'Zona': latest.get('zone'),
+                        'Zona': zone,
                         'SL': round(float(sl), 2),
                         'TP1': round(float(tp1), 2),
                         'RR': rr,
+                        'Dist. POI': f"{dist_poi:+.1f}%",
                         'Nota MTF': latest.get('mtf_note')
                     })
         except Exception as e:
