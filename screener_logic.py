@@ -110,7 +110,7 @@ def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
     df['active_strong_high_idx'] = np.nan
     
     trend = 0  # 1 = Bull, -1 = Bear
-    CANDIDATE_TTL = 60  # Máximo de candles que um candidato permanece válido (~3 meses D1)
+    CANDIDATE_TTL = 200  # Máximo de candles que um candidato permanece válido (~10 meses D1)
     
     recent_high = df['High'].iloc[0]
     recent_low = df['Low'].iloc[0]
