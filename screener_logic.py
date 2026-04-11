@@ -263,11 +263,11 @@ def calculate_fibonacci(start_price: float, end_price: float) -> dict:
 def find_order_blocks(df: pd.DataFrame, start_idx: int, end_idx: int, direction: str) -> pd.DataFrame:
     """Encontra os últimos Order Blocks institucionais APENAS dentro da pernada definida."""
     blocks = []
-    # Proteção de limite
-    start_idx = max(0, start_idx)
+    # O OB verdadeiro frequentemente ocorre de 1 a 5 candles ANTES do efetivo topo/fundo extremo
+    search_start = max(0, start_idx - 5)
     end_idx = min(len(df)-1, max(start_idx+1, end_idx))
     
-    for i in range(start_idx, end_idx):
+    for i in range(search_start, end_idx):
         if direction == 'bull':
             # OB bullish = ultimos candles vermelhos acumulativos antes do empurrão
             if df.loc[i, 'Close'] < df.loc[i, 'Open']:
