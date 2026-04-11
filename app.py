@@ -502,16 +502,16 @@ def landing_page():
             st.rerun()
     with bcol_mid2:
         if st.button("⏱️ Ver Último Resultado", key="btn_quick", use_container_width=True):
-            try:
-                df_saved = pd.read_csv("latest_scan.csv")
-                if df_saved.empty:
-                    st.toast("⚠️ Nenhum resultado prévio. Execute um novo scan.", icon="⚠️")
-                    st.session_state.signals_df = None
-                else:
-                    st.session_state.signals_df = df_saved
-            except Exception:
-                st.toast("⚠️ Arquivo de resultados não encontrado.", icon="⚠️")
-                st.session_state.signals_df = None
+            if st.session_state.signals_df is None:
+                try:
+                    df_saved = pd.read_csv("latest_scan.csv")
+                    if df_saved.empty:
+                        st.toast("⚠️ Nenhum resultado prévio. Execute um novo scan.", icon="⚠️")
+                    else:
+                        st.session_state.signals_df = df_saved
+                except Exception:
+                    st.toast("⚠️ Arquivo de resultados não encontrado.", icon="⚠️")
+            
             st.session_state.active_tab = 'all'
             st.session_state.page = 'screener'
             st.rerun()
@@ -873,6 +873,7 @@ def screener_page():
             try:
                 signals = run_screener('tickers_b3.csv')
                 st.session_state.signals_df = signals
+                signals.to_csv("latest_scan.csv", index=False)
                 st.session_state.last_run = datetime.datetime.now()
             except Exception as e:
                 st.error(f"Erro ao executar screener: {e}")
