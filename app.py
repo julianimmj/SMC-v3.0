@@ -917,18 +917,17 @@ def screener_page():
     st.markdown('<div style="height:1px;background:var(--border);margin:14px 0 12px;"></div>', unsafe_allow_html=True)
 
     # ─── FILTROS RÁPIDOS (inline na tela principal) ────────────────────────────────
-    with st.expander("⚙️ Filtros Avançados", expanded=False):
-        fcol1, fcol2, fcol3 = st.columns(3, gap="medium")
-        with fcol1:
-            st.selectbox("Zona Fibonacci", ["Todas", "Discount", "Premium"],
-                         key="filter_zone", label_visibility="visible")
-        with fcol2:
-            st.slider("RR Mínimo", min_value=0.0, max_value=10.0,
-                      step=0.5, key="min_rr", label_visibility="visible")
-        with fcol3:
-            st.slider("Dist. Máx. POI (%)", min_value=5, max_value=50,
-                      step=5, key="max_dist_poi", label_visibility="visible",
-                      help="Exibe apenas ativos cujo preço atual está próximo do POI")
+    fcol1, fcol2, fcol3 = st.columns(3, gap="medium")
+    with fcol1:
+        st.selectbox("Zona Fibonacci", ["Todas", "Discount", "Premium"],
+                     key="filter_zone", label_visibility="visible")
+    with fcol2:
+        st.slider("RR Mínimo", min_value=0.0, max_value=10.0,
+                  step=0.5, key="min_rr", label_visibility="visible")
+    with fcol3:
+        st.slider("Dist. Máx. POI (%)", min_value=5, max_value=50,
+                  step=5, key="max_dist_poi", label_visibility="visible",
+                  help="Exibe apenas ativos cujo preço atual está próximo do POI")
 
     st.markdown('<div style="height:1px;background:var(--border);margin:4px 0 12px;"></div>', unsafe_allow_html=True)
 
