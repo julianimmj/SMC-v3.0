@@ -4,7 +4,6 @@ Screener Institucional para Ações da B3 com lógica SMC (Smart Money Concepts)
 """
 
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -14,7 +13,7 @@ import datetime
 from screener_logic import run_screener, detect_smc_signals
 
 # ─── Keep-Alive: impede o Streamlit Cloud de adormecer enquanto o usuário está na página
-components.html("""
+st.html("""
 <script>
 (function keepAlive() {
     setInterval(function() {
@@ -799,7 +798,7 @@ def screener_page():
 
         st.divider()
         st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Zona Fibonacci</div>", unsafe_allow_html=True)
-        st.selectbox("", ["Todas", "Discount", "Premium", "Reversal"],
+        st.selectbox("Zona Fibonacci", ["Todas", "Discount", "Premium", "Reversal"],
                      key="filter_zone", label_visibility="collapsed")
 
         st.divider()

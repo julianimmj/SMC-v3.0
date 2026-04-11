@@ -12,42 +12,63 @@ warnings.filterwarnings('ignore')
 
 
 def download_data_batch(tickers: list, period: str = '2y', interval: str = '1d') -> dict:
-    """Download data using yfinance's native batch capabilities."""
+    """Download data using yfinance in small batches to avoid rate limiting on cloud IPs."""
+    import time
     data = {}
-    
-    # yfinance natively handles batch downloading robustly
-    df_batch = yf.download(tickers, period=period, interval=interval, group_by='ticker', progress=False, auto_adjust=True)
-    
-    if df_batch is None or df_batch.empty:
-        return data
+    BATCH_SIZE = 25
+    DELAY = 2  # segundos entre batches
 
-    for ticker in tickers:
-        try:
-            # Extract data for specific ticker
-            if len(tickers) > 1:
-                if ticker not in df_batch.columns.levels[0]:
-                    continue
-                df = df_batch[ticker].copy()
-            else:
-                df = df_batch.copy()
-                if isinstance(df.columns, pd.MultiIndex):
-                    df.columns = df.columns.get_level_values(0)
-            
-            df.dropna(inplace=True)
-            if df.empty:
-                continue
+    for batch_start in range(0, len(tickers), BATCH_SIZE):
+        batch = tickers[batch_start : batch_start + BATCH_SIZE]
+        
+        for attempt in range(3):  # até 3 tentativas por batch
+            try:
+                df_batch = yf.download(
+                    batch, period=period, interval=interval,
+                    group_by='ticker', progress=False, auto_adjust=True
+                )
                 
-            df.reset_index(inplace=True)
-            if 'Date' not in df.columns and 'Datetime' in df.columns:
-                df.rename(columns={'Datetime': 'Date'}, inplace=True)
-                
-            # If the date column is still an index named Date
-            if 'Date' not in df.columns and df.index.name == 'Date':
-                df.reset_index(inplace=True)
-                
-            data[ticker] = df
-        except Exception:
-            continue
+                if df_batch is None or df_batch.empty:
+                    break
+
+                for ticker in batch:
+                    try:
+                        if len(batch) > 1:
+                            if isinstance(df_batch.columns, pd.MultiIndex) and ticker in df_batch.columns.get_level_values(0):
+                                df = df_batch[ticker].copy()
+                            else:
+                                continue
+                        else:
+                            df = df_batch.copy()
+                            if isinstance(df.columns, pd.MultiIndex):
+                                df.columns = df.columns.get_level_values(0)
+
+                        df.dropna(inplace=True)
+                        if df.empty:
+                            continue
+
+                        df.reset_index(inplace=True)
+                        if 'Date' not in df.columns and 'Datetime' in df.columns:
+                            df.rename(columns={'Datetime': 'Date'}, inplace=True)
+                        if 'Date' not in df.columns and df.index.name == 'Date':
+                            df.reset_index(inplace=True)
+
+                        df.reset_index(drop=True, inplace=True)
+                        data[ticker] = df
+                    except Exception:
+                        continue
+
+                break  # batch OK, sai do retry loop
+
+            except Exception as e:
+                if 'Rate' in str(e) or '429' in str(e):
+                    time.sleep(DELAY * (attempt + 2))  # backoff progressivo
+                else:
+                    break
+
+        # Delay entre batches
+        if batch_start + BATCH_SIZE < len(tickers):
+            time.sleep(DELAY)
 
     return data
 
