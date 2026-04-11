@@ -506,15 +506,17 @@ def landing_page():
                 try:
                     df_saved = pd.read_csv("latest_scan.csv")
                     if df_saved.empty:
-                        st.toast("⚠️ Nenhum resultado prévio. Execute um novo scan.", icon="⚠️")
+                        st.toast("⚠️ Nenhum resultado prévio. Use 'Realizar Novo Screener'.", icon="⚠️")
                     else:
                         st.session_state.signals_df = df_saved
                 except Exception:
-                    st.toast("⚠️ Arquivo de resultados não encontrado.", icon="⚠️")
+                    st.toast("⚠️ Arquivo de resultados não encontrado. Use 'Realizar Novo Screener'.", icon="⚠️")
             
-            st.session_state.active_tab = 'all'
-            st.session_state.page = 'screener'
-            st.rerun()
+            # Só redireciona se realmente tivermos dados para mostrar
+            if st.session_state.signals_df is not None:
+                st.session_state.active_tab = 'all'
+                st.session_state.page = 'screener'
+                st.rerun()
 
     # 4 ── Email Registration Form ────────────────────────────────────────────────
     st.markdown("<div style='height: 40px;'></div>", unsafe_allow_html=True)
