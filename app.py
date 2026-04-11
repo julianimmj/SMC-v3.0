@@ -573,7 +573,7 @@ def landing_page():
     with col_s3:
         st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">6</span><div class="slbl">Validações</div></div>', unsafe_allow_html=True)
     with col_s4:
-        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">RR>3</span><div class="slbl">Filtro Mín.</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;padding:8px 0;"><span class="snum" style="font-size:1.4rem;">RR≥0</span><div class="slbl">Todos Sinais</div></div>', unsafe_allow_html=True)
 
     st.markdown('<div style="height:2px;background:linear-gradient(90deg,transparent,rgba(79,142,247,0.2),transparent);margin:0 0 4px;"></div>', unsafe_allow_html=True)
 
@@ -803,6 +803,11 @@ def screener_page():
                      key="filter_zone", label_visibility="collapsed")
 
         st.divider()
+        st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>RR Mínimo</div>", unsafe_allow_html=True)
+        st.slider("RR Mínimo", min_value=0.0, max_value=10.0, value=0.0, step=0.5,
+                  key="min_rr", label_visibility="collapsed")
+
+        st.divider()
         st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>📋 Execução MTF</div>", unsafe_allow_html=True)
         st.markdown("""
         <div class="mtf-note" style="font-size:0.77rem;">
@@ -861,9 +866,10 @@ def screener_page():
 
     signals_df = st.session_state.signals_df
 
-    # Base dataset — RR > 3 (fonte de verdade para TODAS as contagens)
+    # Base dataset — todos os sinais válidos
     if signals_df is not None and not signals_df.empty:
-        base_df = signals_df[signals_df['RR'] > 3].copy()
+        min_rr = st.session_state.get('min_rr', 0.0)
+        base_df = signals_df[signals_df['RR'] >= min_rr].copy()
     else:
         base_df = pd.DataFrame()
 
@@ -927,7 +933,7 @@ def screener_page():
             f'<div style="font-size:0.77rem;color:var(--t3);margin-bottom:8px;">'
             f'Exibindo <strong style="color:var(--t1);">{len(filtered)}</strong> sinal(is) '
             f'— Filtro: <span style="color:var(--accent);">{tab_label}{zone_label}</span>'
-            f'&nbsp;·&nbsp;RR &gt; 3</div>',
+            f'&nbsp;·&nbsp;RR &ge; {min_rr:.1f}</div>',
             unsafe_allow_html=True
         )
 
@@ -971,7 +977,7 @@ def screener_page():
                 try:
                     import yfinance as yf
                     ticker_obj = yf.Ticker(f"{selected_ticker}.SA")
-                    df_raw = ticker_obj.history(period='6mo', interval='1d', auto_adjust=True)
+                    df_raw = ticker_obj.history(period='1y', interval='1d', auto_adjust=True)
                     df_raw = df_raw[['Open', 'High', 'Low', 'Close', 'Volume']].copy()
                     df_raw.dropna(inplace=True)
                     df_raw.reset_index(inplace=True)
@@ -984,7 +990,9 @@ def screener_page():
                     trade_info = {
                         'entry': float(mtf_row['POI Preço']),
                         'sl':    float(mtf_row['SL']),
-                        'tp':    float(mtf_row['TP1'])
+                        'tp':    float(mtf_row['TP1']),
+                        'signal': mtf_row['Sinal'],
+                        'tipo':   mtf_row['Tipo']
                     }
                     fig = build_chart(df_analyzed, selected_ticker, trade_info=trade_info)
                     st.plotly_chart(fig, use_container_width=True)
