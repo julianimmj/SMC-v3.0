@@ -510,16 +510,23 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
                     if pd.isna(poi) or pd.isna(sl) or pd.isna(tp1):
                         continue
 
-                    # Filtro severo de Invalidação pós-signal (Stop-Out Dinâmico)
+                    # Filtro severo de Invalidação pós-signal (Stop-Out Dinâmico + TP Atingido + Expiração)
                     signal_idx = latest.name
+                    
+                    # Se o sinal é muito antigo (prescrito), ignora (usamos 100 dias úteis como trava máxima de segurança)
+                    if (len(df) - 1) - df.index.get_loc(signal_idx) > 100:
+                        continue
+
                     if latest['signal'] == 'bull':
                         if poi <= sl: continue # Protecao matemática 
-                        if df.loc[signal_idx:, 'Low'].min() <= sl: continue # Fundo protegido quebrado hoje -> Setup Falhou
+                        if df.loc[signal_idx:, 'Low'].min() <= sl: continue # Stop-Out: Setup Falhou
+                        if df.loc[signal_idx:, 'High'].max() >= tp1: continue # Target-Hit: Setup já concluiu
                         risk = abs(poi - sl)
                         reward = abs(tp1 - poi)
                     else: # bear
                         if poi >= sl: continue
-                        if df.loc[signal_idx:, 'High'].max() >= sl: continue
+                        if df.loc[signal_idx:, 'High'].max() >= sl: continue # Stop-Out: Setup Falhou
+                        if df.loc[signal_idx:, 'Low'].min() <= tp1: continue # Target-Hit: Setup já concluiu
                         risk = abs(sl - poi)
                         reward = abs(poi - tp1)
 
