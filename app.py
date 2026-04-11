@@ -822,22 +822,6 @@ def screener_page():
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.divider()
-        st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Zona Fibonacci</div>", unsafe_allow_html=True)
-        st.selectbox("Zona Fibonacci", ["Todas", "Discount", "Premium", "Reversal"],
-                     key="filter_zone", label_visibility="collapsed")
-
-        st.divider()
-        st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>RR Mínimo</div>", unsafe_allow_html=True)
-        st.slider("RR Mínimo", min_value=0.0, max_value=10.0, value=0.0, step=0.5,
-                  key="min_rr", label_visibility="collapsed")
-
-        st.divider()
-        st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Dist. Máx. ao POI</div>", unsafe_allow_html=True)
-        st.slider("Dist. Máx. POI", min_value=5, max_value=50, value=15, step=5,
-                  key="max_dist_poi", label_visibility="collapsed",
-                  help="Exibe apenas ativos cujo preço atual está a no máximo X% do ponto de entrada (POI)")
-
-        st.divider()
         st.markdown("<div style='font-size:0.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>📋 Execução MTF</div>", unsafe_allow_html=True)
         st.markdown("""
         <div class="mtf-note" style="font-size:0.77rem;">
@@ -931,6 +915,22 @@ def screener_page():
             st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div style="height:1px;background:var(--border);margin:14px 0 12px;"></div>', unsafe_allow_html=True)
+
+    # ─── FILTROS RÁPIDOS (inline na tela principal) ────────────────────────────────
+    with st.expander("⚙️ Filtros Avançados", expanded=False):
+        fcol1, fcol2, fcol3 = st.columns(3, gap="medium")
+        with fcol1:
+            st.selectbox("Zona Fibonacci", ["Todas", "Discount", "Premium"],
+                         key="filter_zone", label_visibility="visible")
+        with fcol2:
+            st.slider("RR Mínimo", min_value=0.0, max_value=10.0,
+                      step=0.5, key="min_rr", label_visibility="visible")
+        with fcol3:
+            st.slider("Dist. Máx. POI (%)", min_value=5, max_value=50,
+                      step=5, key="max_dist_poi", label_visibility="visible",
+                      help="Exibe apenas ativos cujo preço atual está próximo do POI")
+
+    st.markdown('<div style="height:1px;background:var(--border);margin:4px 0 12px;"></div>', unsafe_allow_html=True)
 
     # ─── APLICAR FILTROS ────────────────────────────────────────────────────────────
     filtered = base_df.copy()
