@@ -265,21 +265,19 @@ def find_validated_ob(df: pd.DataFrame, extreme_idx: int, bos_idx: int, directio
     Encontra o Order Block (OB) institucional validado conforme SMC rigoroso.
 
     ── Definição ──────────────────────────────────────────────────────────────
-    • Bullish OB: Última vela bearish (vermelha) ANTES do Strong Low —
-      representa a última distribuição institucional antes da reversão de alta.
-    • Bearish OB: Última vela bullish (verde) ANTES do Strong High —
-      representa a última acumulação institucional antes da reversão de baixa.
+    • Bullish OB: Última vela ANTES do Strong Low (não importa a cor).
+      Representa o último ponto de acumulação institucional antes da reversão.
+    • Bearish OB: Última vela ANTES do Strong High (não importa a cor).
+      Representa o último ponto de distribuição institucional antes da queda.
 
     ── Critérios de Validação (TODOS obrigatórios) ───────────────────────────
-    1. Displacement: Ao menos 1 vela pós-extremo com corpo ≥ 55 % do range
-       total e na direção correta (prova de força institucional).
-    2. FVG (Fair Value Gap): Gap de preço no impulso logo após o extremo,
-       confirmando desequilíbrio real entre oferta/demanda.
+    1. Displacement: Ao menos 1 vela pós-extremo com corpo ≥ 50% do range
+       total e na direção correta (corpo longo, sombras mínimas).
+    2. FVG (Fair Value Gap): Gap de preço no impulso logo após o extremo.
     3. BOS: Já confirmado pelo caller (detect_smc_signals).
 
     ── Ponto de Entrada ──────────────────────────────────────────────────────
-    Mean Threshold (MT) = 50 % da vela do OB = (High + Low) / 2
-    Nível refinado defendido por instituições com extremo rigor.
+    Mean Threshold (MT) = 50% da vela do OB = (High + Low) / 2
 
     Args:
         df:           DataFrame com dados OHLCV + colunas estruturais
@@ -290,37 +288,18 @@ def find_validated_ob(df: pd.DataFrame, extreme_idx: int, bos_idx: int, directio
     Returns:
         dict {'idx', 'high', 'low', 'mt'} do OB validado, ou None.
     """
-    LOOKBACK     = 15    # Candles máximos para trás a partir do extremo
-    DISP_RATIO   = 0.55  # Corpo mínimo como % do range para displacement
+    DISP_RATIO   = 0.50  # Corpo mínimo como % do range para displacement
     DISP_WINDOW  = 8     # Candles após extremo para verificar displacement
     FVG_WINDOW   = 15    # Candles após extremo para verificar FVG
 
-    search_start = max(0, extreme_idx - LOOKBACK)
-
-    # ── 1. Localizar o candle OB (última vela de cor OPOSTA ao impulso) ─────
-    ob_idx = None
-
-    if direction == 'bull':
-        # Bullish OB = última vela VERMELHA antes do Strong Low
-        for j in range(extreme_idx, search_start - 1, -1):
-            if j < 0 or j >= len(df):
-                continue
-            if df.loc[j, 'Close'] < df.loc[j, 'Open']:
-                ob_idx = j
-                break
-    else:
-        # Bearish OB = última vela VERDE antes do Strong High
-        for j in range(extreme_idx, search_start - 1, -1):
-            if j < 0 or j >= len(df):
-                continue
-            if df.loc[j, 'Close'] > df.loc[j, 'Open']:
-                ob_idx = j
-                break
-
-    if ob_idx is None:
+    # ── 1. O OB é a última vela ANTES do extremo (NÃO IMPORTA A COR) ───────
+    ob_idx = extreme_idx - 1
+    if ob_idx < 0 or ob_idx >= len(df):
         return None
 
     # ── 2. Validar DISPLACEMENT (velas impulsivas após o extremo) ───────────
+    #    O preço deve sair da zona com velas de corpo longo e sombras mínimas,
+    #    provando força institucional.
     disp_end = min(extreme_idx + DISP_WINDOW + 1, bos_idx + 1, len(df))
     displacement_ok = False
 
@@ -343,6 +322,7 @@ def find_validated_ob(df: pd.DataFrame, extreme_idx: int, bos_idx: int, directio
         return None
 
     # ── 3. Validar FVG (Fair Value Gap no impulso pós-extremo) ──────────────
+    #    O movimento deve deixar um "vazio" de preço logo após o bloco.
     fvg_end = min(extreme_idx + FVG_WINDOW + 1, bos_idx + 1, len(df) - 1)
     fvg_ok = False
 
@@ -350,12 +330,12 @@ def find_validated_ob(df: pd.DataFrame, extreme_idx: int, bos_idx: int, directio
         if k < 1 or k >= len(df) - 1:
             continue
         if direction == 'bull':
-            # FVG Bullish: High da vela anterior < Low da vela seguinte (gap ascendente)
+            # FVG Bullish: High[k-1] < Low[k+1] (gap ascendente)
             if df.loc[k - 1, 'High'] < df.loc[k + 1, 'Low']:
                 fvg_ok = True
                 break
         else:
-            # FVG Bearish: Low da vela anterior > High da vela seguinte (gap descendente)
+            # FVG Bearish: Low[k-1] > High[k+1] (gap descendente)
             if df.loc[k - 1, 'Low'] > df.loc[k + 1, 'High']:
                 fvg_ok = True
                 break
