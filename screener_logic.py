@@ -394,15 +394,18 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
             if not order_blocks.empty:
                 discount_obs = order_blocks[order_blocks['low'] < fib_50]
                 if not discount_obs.empty:
-                    ob = discount_obs.iloc[-1]
-                    poi_price = (ob['high'] + ob['low']) / 2
-                    poi_type = 'Order Block'
+                    # Usa o Order Block Extremo (o primeiro da base do movimento) para maior segurança
+                    ob = discount_obs.iloc[0]
+                    # POI é a máxima do candle (aresta proximal que o preço toca primeiro antes dos 50%)
+                    poi_price = ob['high']
+                    poi_type = 'OB Extremo'
 
             if poi_price is None:
-                for fvg in reversed(fvgs):
-                    if fvg['type'] == 'bullish' and fvg['mid'] < fib_50:
-                        poi_price = fvg['mid']
-                        poi_type = 'FVG'
+                # Usa o FVG Extremo (o primeiro da base do movimento)
+                for fvg in fvgs:
+                    if fvg['type'] == 'bullish' and fvg['top'] < fib_50:
+                        poi_price = fvg['top']  # Aresta proximal do FVG
+                        poi_type = 'FVG Extremo'
                         break
 
             if poi_price is None:
@@ -444,15 +447,17 @@ def detect_smc_signals(df: pd.DataFrame) -> pd.DataFrame:
             if not order_blocks.empty:
                 premium_obs = order_blocks[order_blocks['high'] > fib_50]
                 if not premium_obs.empty:
-                    ob = premium_obs.iloc[-1]
-                    poi_price = (ob['high'] + ob['low']) / 2
-                    poi_type = 'Order Block'
+                    # Usa o Order Block Extremo (o primeiro do topo do movimento) para maior segurança
+                    ob = premium_obs.iloc[0]
+                    # POI é a mínima do candle (aresta proximal)
+                    poi_price = ob['low']
+                    poi_type = 'OB Extremo'
 
             if poi_price is None:
-                for fvg in reversed(fvgs):
-                    if fvg['type'] == 'bearish' and fvg['mid'] > fib_50:
-                        poi_price = fvg['mid']
-                        poi_type = 'FVG'
+                for fvg in fvgs:
+                    if fvg['type'] == 'bearish' and fvg['bottom'] > fib_50:
+                        poi_price = fvg['bottom'] # Aresta proximal do FVG
+                        poi_type = 'FVG Extremo'
                         break
 
             if poi_price is None:
