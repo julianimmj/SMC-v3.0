@@ -292,8 +292,8 @@ def find_validated_ob(df: pd.DataFrame, extreme_idx: int, bos_idx: int, directio
     DISP_WINDOW  = 8     # Candles após extremo para verificar displacement
     FVG_WINDOW   = 15    # Candles após extremo para verificar FVG
 
-    # ── 1. O OB é a última vela ANTES do extremo (NÃO IMPORTA A COR) ───────
-    ob_idx = extreme_idx - 1
+    # ── 1. O OB é a vela no PONTO EXTREMO (o pico ou fundo institucional) ───
+    ob_idx = extreme_idx
     if ob_idx < 0 or ob_idx >= len(df):
         return None
 
