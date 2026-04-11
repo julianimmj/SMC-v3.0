@@ -125,23 +125,12 @@ def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
         cur_high = df.loc[i, 'High']
         cur_low = df.loc[i, 'Low']
         cur_close = df.loc[i, 'Close']
-
-        # Atualiza extremos da perna atual (weak levels temporarios)
-        if cur_high > recent_high:
-            recent_high = cur_high
-        if cur_low < recent_low:
-            recent_low = cur_low
             
         # Expirar candidatos antigos (TTL)
-        # Quando expira, reseta recent_high/low para evitar acumulação de extremos impossíveis
         if candidate_low is not None and (i - candidate_low[1]) > CANDIDATE_TTL:
             candidate_low = None
-            if trend == 0:
-                recent_low = cur_low
         if candidate_high is not None and (i - candidate_high[1]) > CANDIDATE_TTL:
             candidate_high = None
-            if trend == 0:
-                recent_high = cur_high
 
         # Avalia varreduras -> Criam candidatos a Pontos Fortes
         if df.loc[i, 'bull_sweep']:
@@ -156,25 +145,25 @@ def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
         elif candidate_high is not None and cur_high >= candidate_high[0]:
             candidate_high = (cur_high, i)
 
-        # Valida Quebras Estruturais (apenas Close válido)
+        # ═══ Valida Quebras Estruturais (Close vs extremos do candle ANTERIOR) ═══
+        # recent_high/recent_low ainda refletem o extremo até o candle i-1
         if trend == 1:
             # CHOCH de Baixa: Perde o verdadeiro Strong Low ativo
             if strong_low is not None and cur_close < strong_low[0]:
                 df.loc[i, 'choch_bear'] = True
                 trend = -1
-                # O topo que originou a queda vira o novo Strong High (usa o candidato ou o topo absoluto se faltar)
                 strong_high = candidate_high if candidate_high is not None else (recent_high, df.loc[:i, 'High'].idxmax())
-                candidate_low = None # Invalida o antigo candidato de compra
+                candidate_low = None
                 recent_low = cur_low 
                 recent_high = cur_high
                 
-            # BOS de Alta: Rompe o Weak High atual e TEM um candidato de Strong Low (teve sweep antes de subir)
+            # BOS de Alta: Close rompe o topo da perna anterior
             elif cur_close > recent_high and candidate_low is not None:
                 df.loc[i, 'bos_bull'] = True
                 strong_low = candidate_low
                 candidate_low = None
                 recent_high = cur_high
-                recent_low = strong_low[0]  # Weak low da nova perna = strong low protegido
+                recent_low = strong_low[0]
                 
         elif trend == -1:
             # CHOCH de Alta: Rompe acima do verdadeiro Strong High ativo
@@ -186,16 +175,15 @@ def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
                 recent_high = cur_high
                 recent_low = cur_low
                 
-            # BOS de Baixa: Perde o Weak Low atual e TEM um candidato de Strong High (teve sweep antes de cair)
+            # BOS de Baixa: Close perde o fundo da perna anterior
             elif cur_close < recent_low and candidate_high is not None:
                 df.loc[i, 'bos_bear'] = True
                 strong_high = candidate_high
                 candidate_high = None
                 recent_low = cur_low
-                recent_high = strong_high[0]  # Weak high da nova perna = strong high protegido
+                recent_high = strong_high[0]
                 
         else: # Estado Inicial -> Esperando a primeira estrutura
-            # Na inicialização, aceita rompimento com ou sem candidato para não travar a máquina
             if cur_close > recent_high:
                 trend = 1
                 df.loc[i, 'choch_bull'] = True
@@ -203,7 +191,6 @@ def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
                     strong_low = candidate_low
                     candidate_low = None
                 else:
-                    # Fallback: usa o fundo recente como strong low
                     min_idx = df.loc[:i, 'Low'].idxmin()
                     strong_low = (df.loc[min_idx, 'Low'], min_idx)
                 recent_high = cur_high
@@ -215,11 +202,16 @@ def map_market_structure(df: pd.DataFrame) -> pd.DataFrame:
                     strong_high = candidate_high
                     candidate_high = None
                 else:
-                    # Fallback: usa o topo recente como strong high
                     max_idx = df.loc[:i, 'High'].idxmax()
                     strong_high = (df.loc[max_idx, 'High'], max_idx)
                 recent_low = cur_low
                 recent_high = cur_high
+
+        # ═══ SÓ DEPOIS dos checks: atualiza os extremos para o próximo candle ═══
+        if cur_high > recent_high:
+            recent_high = cur_high
+        if cur_low < recent_low:
+            recent_low = cur_low
 
         # Anexa estado aos frames
         if strong_low is not None:
