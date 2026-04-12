@@ -31,7 +31,7 @@ try:
     _tickers_df = pd.read_csv('tickers_b3.csv')
     TOTAL_TICKERS = len(_tickers_df)
 except Exception:
-    TOTAL_TICKERS = 177
+    TOTAL_TICKERS = 194
 
 st.set_page_config(
     page_title="SMC Cloud Screener v3.0",
