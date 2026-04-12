@@ -473,11 +473,9 @@ def landing_page():
         st.markdown(f"""
         <div style="padding: 40px 0 20px 24px;">
           <div class="panel">
-            <div class="pbar">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="ptitle">📊 Sinais Ativos — D1</span>
-                <span style="font-size: 0.55rem; color: #f4436c; font-weight: 800; background: rgba(244,67,108,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(244,67,108,0.3); text-transform: uppercase;">⚠️ Modelo Ilustrativo</span>
-              </div>
+            <div class="pbar" style="position: relative;">
+              <span class="ptitle">📊 Sinais Ativos — D1</span>
+              <span style="position: absolute; left: 50%; transform: translateX(-50%); font-size: 0.55rem; color: #f4436c; font-weight: 800; background: rgba(244,67,108,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(244,67,108,0.3); text-transform: uppercase; white-space: nowrap;">⚠️ Modelo Ilustrativo</span>
               <div class="live"><div class="dot"></div> Atualizado hoje</div>
             </div>
             <div class="pbody">
