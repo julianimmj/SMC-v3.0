@@ -941,7 +941,7 @@ Este algoritmo não possui uma "Visão Bifocal" (Macro vs Micro) simultânea. El
         st.selectbox("Zona Fibonacci", ["Todas", "Discount", "Premium"],
                      key="filter_zone", label_visibility="visible")
     with fcol2:
-        st.slider("RR Mínimo", min_value=0.0, max_value=10.0,
+        st.slider("Risco Retorno Mínimo", min_value=0.0, max_value=10.0,
                   step=0.5, key="min_rr", label_visibility="visible")
     with fcol3:
         st.slider("Dist. Máx. POI (%)", min_value=5, max_value=50,
