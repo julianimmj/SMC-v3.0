@@ -488,8 +488,10 @@ def landing_page():
               <span>{TOTAL_TICKERS} ativos verificados</span><span>Ações · ETFs · BDRs · FIIs</span><span>D1 diário</span>
             </div>
           </div>
-          <div style="text-align: right; margin-top: 8px; margin-right: 4px; font-size: 0.72rem; color: #8b8baa; font-style: italic;">
-            * Acima: modelo visual ilustrativo
+          <div style="text-align: right; margin-top: 12px; margin-right: 4px;">
+            <span style="font-size: 0.75rem; color: #f4436c; font-weight: 700; background: rgba(244,67,108,0.1); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(244,67,108,0.3);">
+              ⚠️ Os dados no painel acima são apenas exemplos ilustrativos
+            </span>
           </div>
         </div>
         """, unsafe_allow_html=True)
