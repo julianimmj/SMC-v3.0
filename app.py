@@ -484,10 +484,12 @@ def landing_page():
               <div class="prow"><span class="tk">ITUB4</span><span class="st b">BOS</span><span class="dr dn">▼ Baixa</span><span class="zn">🟡 Premium</span></div>
               <div class="prow"><span class="tk">BBDC4</span><span class="st c">CHOCH</span><span class="dr up">▲ Alta</span><span class="zn">🔵 Discount</span></div>
             </div>
-            <div class="pfoot" style="position:relative;">
+            <div class="pfoot">
               <span>{TOTAL_TICKERS} ativos verificados</span><span>Ações · ETFs · BDRs · FIIs</span><span>D1 diário</span>
-              <div style="position:absolute; bottom:-18px; right:0; font-size:0.65rem; color:#8b8baa; font-style:italic;">* Painel meramente ilustrativo</div>
             </div>
+          </div>
+          <div style="text-align: right; margin-top: 8px; margin-right: 4px; font-size: 0.72rem; color: #8b8baa; font-style: italic;">
+            * Acima: modelo visual ilustrativo
           </div>
         </div>
         """, unsafe_allow_html=True)
