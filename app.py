@@ -863,14 +863,14 @@ def screener_page():
             <p style="color:var(--t3);margin-top:4px;font-size:0.74rem;letter-spacing:0.3px;">
                 Varredura D1 &nbsp;·&nbsp; ICT/SMC 2025-2026 &nbsp;·&nbsp; Sweep Confirmado &nbsp;·&nbsp; Filtro RR&nbsp;&gt;&nbsp;3
             </p>
-            
-            <div style="margin-top: 16px; margin-bottom: 8px; padding: 14px 18px; background: rgba(79,142,247,0.06); border-left: 3px solid #4f8ef7; border-radius: 6px; font-size: 0.82rem; color: #c6c6d3; line-height: 1.55;">
-                <strong style="color: #4f8ef7; font-size: 0.88rem;">🔍 Lógica Single-Fractal (D1):</strong><br>
-                Este algoritmo não possui uma "Visão Bifocal" (Macro vs Micro) simultânea. Ele enxerga o <b>Gráfico Diário (D1)</b> como a Estrutura Macro absoluta.<br>
-                <div style="margin-top: 6px;">
-                    <strong style="color: #f1f1fa;">O que isso significa na prática?</strong> Se o preço no D1 formar um topo, descer para corrigir, e durante a queda realizar um CHOCH Bearish no D1, o robô não pensará: <i>"Ah, isso é só um CHOCH interno de pullback da estrutura de alta"</i>. Ele vai <b>literalmente virar a mão</b>! Inverterá a tendência global para baixa e passará a procurar vendas. Verifique o tempo menor (M15) no toque das zonas para refinar entradas a favor da macro.
-                </div>
-            </div>
+
+<div style="margin-top: 16px; margin-bottom: 8px; padding: 14px 18px; background: rgba(79,142,247,0.06); border-left: 3px solid #4f8ef7; border-radius: 6px; font-size: 0.82rem; color: #c6c6d3; line-height: 1.55;">
+<strong style="color: #4f8ef7; font-size: 0.88rem;">🔍 Lógica Single-Fractal (D1):</strong><br>
+Este algoritmo não possui uma "Visão Bifocal" (Macro vs Micro) simultânea. Ele enxerga o <b>Gráfico Diário (D1)</b> como a Estrutura Macro absoluta.<br>
+<div style="margin-top: 6px;">
+<strong style="color: #f1f1fa;">O que isso significa na prática?</strong> Se o preço no D1 formar um topo, descer para corrigir, e durante a queda realizar um CHOCH Bearish no D1, o robô não pensará: <i>"Ah, isso é só um CHOCH interno de pullback da estrutura de alta"</i>. Ele vai <b>literalmente virar a mão</b>! Inverterá a tendência global para baixa e passará a procurar vendas. Verifique o tempo menor (M15) no toque das zonas para refinar entradas a favor da macro.
+</div>
+</div>
         </div>
         """, unsafe_allow_html=True)
     with hcol_r:
