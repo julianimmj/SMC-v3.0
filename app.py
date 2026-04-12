@@ -540,6 +540,10 @@ def landing_page():
 
                 # Tenta salvar no GitHub (produção)
                 try:
+                    if "GITHUB_TOKEN" not in st.secrets:
+                        st.warning("⚠️ Token do GitHub ausente! O e-mail será salvo apenas na memória provisória até o reinício do servidor.")
+                        raise KeyError("Missing GITHUB_TOKEN")
+                        
                     from github import Github
                     gh_token = st.secrets["GITHUB_TOKEN"]
                     g = Github(gh_token)
@@ -553,7 +557,10 @@ def landing_page():
                         email_added = True
                     else:
                         st.info("📧 E-mail já está na lista.")
-                except Exception:
+                except Exception as ex:
+                    if "Missing GITHUB_TOKEN" not in str(ex):
+                        st.error(f"Erro ao salvar e-mail na nuvem (GitHub): {ex}")
+                        
                     # Fallback: salva localmente
                     try:
                         with open("emails.json", "r") as f:
@@ -564,9 +571,9 @@ def landing_page():
                                 json.dump(data, f)
                             email_added = True
                         else:
-                            st.info("📧 E-mail já está na lista.")
+                            st.info("📧 E-mail já está na lista provisória.")
                     except Exception as e:
-                        st.error(f"Erro ao salvar e-mail: {e}")
+                        st.error(f"Erro fatal ao salvar e-mail localmente: {e}")
 
                 if email_added:
                     st.success("✅ E-mail cadastrado com sucesso! Te avisaremos do próximo setup.")
