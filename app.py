@@ -868,7 +868,7 @@ def screener_page():
 <strong style="color: #4f8ef7; font-size: 0.88rem;">🔍 Lógica Single-Fractal (D1):</strong><br>
 Este algoritmo não possui uma "Visão Bifocal" (Macro vs Micro) simultânea. Ele enxerga o <b>Gráfico Diário (D1)</b> como a Estrutura Macro absoluta.<br>
 <div style="margin-top: 6px;">
-<strong style="color: #f1f1fa;">O que isso significa na prática?</strong> Se o preço no D1 formar um topo, descer para corrigir, e durante a queda realizar um CHOCH Bearish no D1, o robô não pensará: <i>"Ah, isso é só um CHOCH interno de pullback da estrutura de alta"</i>. Ele vai <b>literalmente virar a mão</b>! Inverterá a tendência global para baixa e passará a procurar vendas. Verifique o tempo menor (M15) no toque das zonas para refinar entradas a favor da macro.
+<strong style="color: #f1f1fa;">O que isso significa na prática?</strong> Se o preço no D1 formar um topo, descer para corrigir, e durante a queda realizar um CHOCH Bearish no D1, o robô não pensará: <i>"Ah, isso é só um CHOCH interno de pullback da estrutura de alta"</i>. Ele vai <b>literalmente virar a mão</b>! Inverterá a tendência global para baixa e passará a procurar vendas.
 </div>
 </div>
         </div>
