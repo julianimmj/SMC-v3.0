@@ -599,6 +599,11 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
                         if df.loc[signal_idx:, 'Low'].min() <= sl * 1.005: continue # Stop-Out (0.5% tolerância)
                         if df.loc[signal_idx:, 'High'].max() >= tp1 * 0.995: continue # Target-Hit (0.5% tolerância)
                         if last_close >= tp1: continue  # Preço atual já superou o alvo
+
+                        # Filtro Absoluto de Mitigação: Se o preço já tocou o POI entre a formação do sinal e hoje, descarta!
+                        if signal_idx < df.index[-1]:
+                            if df.loc[signal_idx + 1:, 'Low'].min() <= poi: continue
+
                         risk = abs(poi - sl)
                         reward = abs(tp1 - poi)
                     else: # bear
@@ -606,6 +611,11 @@ def run_screener(tickers_file: str = 'tickers_b3.csv') -> pd.DataFrame:
                         if df.loc[signal_idx:, 'High'].max() >= sl * 0.995: continue # Stop-Out (0.5% tolerância)
                         if df.loc[signal_idx:, 'Low'].min() <= tp1 * 1.005: continue # Target-Hit (0.5% tolerância)
                         if last_close <= tp1: continue  # Preço atual já estourou o alvo
+
+                        # Filtro Absoluto de Mitigação: Se o preço já tocou o POI entre a formação do sinal e hoje, descarta!
+                        if signal_idx < df.index[-1]:
+                            if df.loc[signal_idx + 1:, 'High'].max() >= poi: continue
+
                         risk = abs(sl - poi)
                         reward = abs(poi - tp1)
 
