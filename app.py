@@ -861,7 +861,7 @@ def screener_page():
                 📈 SMC Screener — Sinais Ativos
             </h1>
             <p style="color:var(--t3);margin-top:4px;font-size:0.74rem;letter-spacing:0.3px;">
-                Varredura D1 &nbsp;·&nbsp; ICT/SMC 2025-2026 &nbsp;·&nbsp; Sweep Confirmado &nbsp;·&nbsp; Filtro RR&nbsp;&gt;&nbsp;3
+                Varredura D1 &nbsp;·&nbsp; ICT/SMC 2025-2026 &nbsp;·&nbsp; Sweep Confirmado &nbsp;·&nbsp; Filtros Dinâmicos
             </p>
 
 <div style="margin-top: 16px; margin-bottom: 8px; padding: 14px 18px; background: rgba(79,142,247,0.06); border-left: 3px solid #4f8ef7; border-radius: 6px; font-size: 0.82rem; color: #c6c6d3; line-height: 1.55;">

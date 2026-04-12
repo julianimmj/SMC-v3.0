@@ -14,18 +14,22 @@ def job():
         print(f"Erro na varredura: {e}")
         return
 
-    # 2. Filter RR > 3 like the UI does!
+    # 2. Save ALL signals so the frontend UI sliders work correctly!
     if not df_signals.empty:
-        df_filtered = df_signals[df_signals['RR'] > 3].copy()
+        df_signals.to_csv('latest_scan.csv', index=False)
+        print(f"Salvo latest_scan.csv com {len(df_signals)} resultados.")
     else:
-        df_filtered = pd.DataFrame()
+        pd.DataFrame().to_csv('latest_scan.csv', index=False)
+        print("Nenhum resultado capturado no robô para o CSV.")
 
-    # 3. Save to latest_scan.csv
-    df_filtered.to_csv('latest_scan.csv', index=False)
-    print(f"Salvo latest_scan.csv com {len(df_filtered)} resultados.")
+    # 3. Filter high-probability setups (RR > 3) EXCLUSIVELY for the Email Alerts
+    if not df_signals.empty:
+        df_emails = df_signals[df_signals['RR'] > 3].copy()
+    else:
+        df_emails = pd.DataFrame()
 
     # 4. Notify if there are high-prob signals
-    if not df_filtered.empty:
+    if not df_emails.empty:
         # Load emails
         try:
             with open('emails.json', 'r') as f:
@@ -41,7 +45,7 @@ def job():
             sender_pass = os.environ.get('SMTP_PASSWORD')
             
             if sender_email and sender_pass:
-                send_alert_email(df_filtered, emails, sender_email, sender_pass)
+                send_alert_email(df_emails, emails, sender_email, sender_pass)
             else:
                 print("Segredo SMTP não configurado. Impossível enviar e-mails.")
 
