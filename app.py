@@ -43,14 +43,12 @@ st.set_page_config(
 # HIDE STREAMLIT CLOUD UI
 hide_streamlit_style = """
 <style>
-    /* Esconder o menu do Streamlit e o header inteiro */
+    /* Esconder o menu do Streamlit, mas manter o botão de abrir sidebar */
     #MainMenu {visibility: hidden !important;}
-    header {visibility: hidden !important; display: none !important;}
     footer {visibility: hidden !important; display: none !important;}
     
     /* Seletores atualizados (2024/2025) */
-    .stApp > header {display: none !important;}
-    [data-testid="stHeader"] {display: none !important;}
+    [data-testid="stHeader"] {background-color: transparent !important;}
     [data-testid="stToolbar"] {display: none !important;}
     [data-testid="stDecoration"] {display: none !important;}
     [data-testid="stStatusWidget"] {display: none !important;}
@@ -96,7 +94,7 @@ html, body, [class*="css"] {
     padding-top: 0 !important;
     max-width: 100% !important;
 }
-header[data-testid="stHeader"] { display: none !important; }
+header[data-testid="stHeader"] { background-color: transparent !important; }
 #MainMenu, footer { display: none !important; }
 .stApp {
     background:
