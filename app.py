@@ -91,8 +91,7 @@ html, body, [class*="css"] {
     padding-top: 0 !important;
     max-width: 100% !important;
 }
-header[data-testid="stHeader"] { background-color: transparent !important; }
-#MainMenu, footer { display: none !important; }
+/* Streamlit branding — gerenciado pelo bloco hide_streamlit_style */
 .stApp {
     background:
         radial-gradient(ellipse 100% 50% at 50% -5%, rgba(79,142,247,0.12) 0%, transparent 60%),
