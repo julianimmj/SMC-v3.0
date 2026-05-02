@@ -1,13 +1,13 @@
 Ticker,Sinal,Tipo,Preço,POI,POI Preço,Zona,SL,TP1,RR,Dist. POI,Nota MTF
-CAML3,bull,BOS,6.35,OB (MT),5.57,discount,5.39,7.84,12.61,+14.0%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-CSMG3,bull,BOS,54.04,OB (MT),52.02,discount,51.05,63.44,11.77,+3.9%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-ITSA4,bull,CHOCH,13.92,OB (MT),13.17,discount,12.92,15.64,9.88,+5.7%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-KLBN11,bull,CHOCH,17.48,OB (MT),16.13,discount,15.99,22.68,46.79,+8.4%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-IGTI11,bull,BOS,27.5,OB (MT),26.24,discount,25.65,31.48,8.88,+4.8%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-KEPL3,bull,CHOCH,7.78,OB (MT),6.76,discount,6.57,11.5,24.95,+15.1%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-ROXO34,bull,CHOCH,11.93,OB (MT),11.0,discount,10.77,17.88,29.91,+8.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-ALOS3,bull,BOS,30.65,OB (MT),28.62,discount,28.01,35.45,11.2,+7.1%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-RBRR11,bull,BOS,83.63,OB (MT),82.43,discount,81.96,90.61,17.4,+1.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-BRCO11,bear,BOS,118.1,OB (MT),119.9,premium,122.67,109.89,3.61,-1.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-ENGI11,bull,BOS,52.82,OB (MT),49.77,discount,48.79,59.94,10.38,+6.1%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
 ALUP11,bull,BOS,34.5,OB (MT),33.5,discount,32.96,38.0,8.33,+3.0%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+KEPL3,bull,CHOCH,7.78,OB (MT),6.76,discount,6.57,11.5,24.95,+15.1%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+CAML3,bull,BOS,6.35,OB (MT),5.57,discount,5.39,7.84,12.61,+14.0%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+KLBN11,bull,CHOCH,17.48,OB (MT),16.13,discount,15.99,22.68,46.79,+8.4%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+RBRR11,bull,BOS,83.63,OB (MT),82.43,discount,81.96,90.61,17.4,+1.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+CSMG3,bull,BOS,54.04,OB (MT),52.02,discount,51.05,63.44,11.77,+3.9%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+IGTI11,bull,BOS,27.5,OB (MT),26.24,discount,25.65,31.48,8.88,+4.8%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+ALOS3,bull,BOS,30.65,OB (MT),28.62,discount,28.01,35.45,11.2,+7.1%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+ITSA4,bull,CHOCH,13.92,OB (MT),13.17,discount,12.92,15.64,9.88,+5.7%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+ROXO34,bull,CHOCH,11.93,OB (MT),11.0,discount,10.77,17.88,29.91,+8.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+ENGI11,bull,BOS,52.82,OB (MT),49.77,discount,48.79,59.94,10.38,+6.1%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+BRCO11,bear,BOS,118.1,OB (MT),119.9,premium,122.67,109.89,3.61,-1.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
