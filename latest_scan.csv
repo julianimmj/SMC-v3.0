@@ -1,9 +1,10 @@
 Ticker,Sinal,Tipo,Preço,POI,POI Preço,Zona,SL,TP1,RR,Dist. POI,Nota MTF
-KEPL3,bull,CHOCH,7.16,OB (MT),6.76,discount,6.57,11.5,24.95,+5.9%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-RENT3,bull,BOS,44.9,OB (MT),40.15,discount,39.61,53.94,25.54,+11.8%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-ANIM3,bull,BOS,3.39,OB (MT),2.95,discount,2.84,5.4,22.27,+14.9%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-AZZA3,bear,CHOCH,20.89,OB (MT),22.34,premium,23.4,16.94,5.09,-6.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-AZUL3,bull,BOS,24.02,OB (MT),7.34,discount,6.76,41910917.55,72260190.02,+227.2%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-EMAE4,bull,CHOCH,39.96,OB (MT),38.75,discount,38.46,50.46,40.38,+3.1%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-PSSA3,bull,BOS,49.24,OB (MT),43.63,discount,43.28,59.09,44.17,+12.9%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+RENT3,bull,BOS,43.7,OB (MT),40.15,discount,39.61,53.94,25.54,+8.8%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
 TKNO4,bull,BOS,216.0,OB (MT),212.0,discount,211.79,225.99,66.62,+1.9%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+ANIM3,bull,BOS,3.34,OB (MT),2.95,discount,2.84,5.4,22.27,+13.2%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+AZUL3,bull,BOS,22.2,OB (MT),7.34,discount,6.76,41910917.55,72260190.02,+202.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+EMAE4,bull,CHOCH,39.62,OB (MT),38.75,discount,38.46,50.46,40.38,+2.2%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+KNRI11,bear,BOS,164.52,OB (MT),169.28,premium,170.5,154.29,12.29,-2.8%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+HBOR3,bear,BOS,2.45,OB (MT),2.47,premium,2.55,2.04,5.38,-0.8%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+KEPL3,bull,CHOCH,7.09,OB (MT),6.76,discount,6.57,11.5,24.95,+4.9%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+PSSA3,bull,BOS,48.89,OB (MT),43.63,discount,43.28,59.09,44.17,+12.1%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
