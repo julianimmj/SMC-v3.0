@@ -1,8 +1,8 @@
 Ticker,Sinal,Tipo,Preço,POI,POI Preço,Zona,SL,TP1,RR,Dist. POI,Nota MTF
-EMBJ3,bear,BOS,84.6,OB (MT),87.65,premium,88.91,64.11,18.68,-3.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-GGBR4,bear,BOS,23.01,OB (MT),23.94,premium,24.67,19.68,5.84,-3.9%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-VISC11,bear,BOS,105.64,OB (MT),109.53,premium,110.03,97.07,24.92,-3.6%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
 ITUB4,bear,CHOCH,44.3,OB (MT),48.19,premium,48.77,35.17,22.45,-8.1%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+EMBJ3,bear,BOS,84.6,OB (MT),87.65,premium,88.91,64.11,18.68,-3.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
 IRBR3,bear,BOS,57.3,OB (MT),57.73,premium,58.95,48.19,7.82,-0.7%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-ISAE4,bear,CHOCH,30.0,OB (MT),31.5,premium,32.08,25.08,11.07,-4.8%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
 AZUL3,bull,BOS,23.5,OB (MT),7.34,discount,6.76,41910917.55,72260190.02,+220.2%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+ISAE4,bear,CHOCH,30.0,OB (MT),31.5,premium,32.08,25.08,11.07,-4.8%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+VISC11,bear,BOS,105.64,OB (MT),109.53,premium,110.03,97.07,24.92,-3.6%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+GGBR4,bear,BOS,23.01,OB (MT),23.94,premium,24.67,19.68,5.84,-3.9%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
