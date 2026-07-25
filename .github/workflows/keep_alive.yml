@@ -1,27 +1,58 @@
-name: Keep Alive - Prevent Streamlit Sleep
+name: Manter Streamlit Ativo
 
 on:
   schedule:
-    - cron: '0 */4 * * *'  # A cada 4 horas (6x/dia — dentro do limite free do GitHub)
-  workflow_dispatch:
+    # Executa a cada 2 dias às 12:00 UTC
+    - cron: '0 12 */2 * *'
+  workflow_dispatch: # Permite disparar manualmente pela aba 'Actions' no GitHub
 
 jobs:
-  ping:
+  keep-alive:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
     steps:
-      - name: Ping Streamlit App
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Instalar Playwright
         run: |
-          APP_URL="https://smc-v30.streamlit.app/"
-          echo "Pinging $APP_URL ..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$APP_URL")
-          echo "Response: HTTP $STATUS"
-          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
-            echo "✅ App is alive."
-          else
-            echo "⚠️ App returned $STATUS — may be waking up."
-            # Retry after 30s to fully wake it
-            sleep 30
-            STATUS2=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$APP_URL")
-            echo "Retry response: HTTP $STATUS2"
-          fi
+          python -m pip install --upgrade pip
+          pip install playwright
+          playwright install chromium
+
+      - name: Acessar e Acordar a Aplicação
+        run: |
+          python -c "
+          from playwright.sync_api import sync_playwright
+          import time
+
+          URLS = ['https://smc-v30.streamlit.app/']
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              for url in URLS:
+                  page = browser.new_page()
+                  print(f'Acessando: {url}')
+                  try:
+                      page.goto(url, timeout=60000)
+                      time.sleep(5)
+
+                      button = page.query_selector('button:has-text(\"Yes, get this app back up!\")') or page.query_selector('button:has-text(\"Wake up\")') or page.query_selector('button:has-text(\"Get this app back up\")')
+                      
+                      if button:
+                          print('Aplicação encontrada em repouso. Clicando para reativar...')
+                          button.click()
+                          time.sleep(20)
+                          print('Botão pressionado com sucesso!')
+                      else:
+                          print('Aplicação já está ativa e recebeu a visita!')
+                  except Exception as e:
+                      print(f'Erro ao acessar {url}: {e}')
+                  finally:
+                      page.close()
+              browser.close()
+          "
