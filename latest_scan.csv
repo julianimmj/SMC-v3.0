@@ -1,7 +1,11 @@
 Ticker,Sinal,Tipo,Preço,POI,POI Preço,Zona,SL,TP1,RR,Dist. POI,Nota MTF
-PSSA3,bear,CHOCH,51.66,OB (MT),54.53,premium,55.61,44.06,9.69,-5.3%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-CPLE3,bear,CHOCH,15.85,OB (MT),16.57,premium,16.89,12.88,11.53,-4.3%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-VISC11,bear,BOS,103.8,OB (MT),107.76,premium,108.26,95.51,24.5,-3.7%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-WEGE3,bear,BOS,51.74,OB (MT),53.64,premium,54.34,40.4,18.91,-3.5%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-FRAS3,bear,BOS,22.65,OB (MT),24.66,premium,25.15,18.55,12.47,-8.2%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
-ECOR3,bull,CHOCH,7.92,FVG,8.65,discount,5.83,13.59,1.75,-8.4%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+CPLE3,bear,CHOCH,16.0,OB (MT),16.57,premium,16.89,12.88,11.53,-3.4%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+B3SA3,bear,BOS,17.64,OB (MT),19.58,premium,20.05,13.68,12.55,-9.9%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+VISC11,bear,BOS,104.3,OB (MT),107.76,premium,108.26,95.51,24.5,-3.2%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+FRAS3,bear,BOS,22.86,OB (MT),24.66,premium,25.15,18.55,12.47,-7.3%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+CPTS11,bear,BOS,7.5,OB (MT),7.66,premium,7.69,6.92,24.67,-2.1%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+PSSA3,bear,CHOCH,51.15,OB (MT),54.53,premium,55.61,44.06,9.69,-6.2%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+SLCE3,bear,BOS,16.85,OB (MT),19.27,premium,19.5,10.7,37.26,-12.6%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+WEGE3,bear,BOS,52.65,OB (MT),53.64,premium,54.34,40.4,18.91,-1.8%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+HBOR3,bear,BOS,2.16,OB (MT),2.46,premium,2.54,1.45,12.62,-12.2%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
+MOTV3,bear,BOS,16.28,OB (MT),16.81,premium,17.0,12.13,24.63,-3.2%,Aguardar CHOCH interno LTF no M15 para confirmar absorção
